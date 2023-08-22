@@ -1,4 +1,6 @@
-### Создать новый каталог для проекта
+# Создаем новый проект
+
+### Создаем новый каталог для проекта
 
 ```commandline
 mkdir python-web-final
@@ -11,14 +13,14 @@ cd .\python-web-final\
 git init
 ```
 
-### Создать и активировать виртуальное окружение
+### Создаем и активируем виртуальное окружение
 
 ```commandline
 python -m venv .venv
 .\.venv\Scripts\activate
 ```
 
-### Создать файл .gitignore
+### Создаем файл .gitignore
 
 ```
 /.venv/
@@ -28,33 +30,35 @@ python -m venv .venv
 /.env
 ```
 
-### Создать первый коммит
+### Создаем первый коммит
 
-### Создать новый репозиторий на GitHub и связать с локальным
+### Создаем новый репозиторий на GitHub и связать с локальным
 
 ```commandline
 git remote add origin https://github.com/******/python-web-final.git
 git push -u origin main
 ```
 
-### Установить пакет django
+### Устанавливаем пакет django
 
 ```commandline
 pip install django
 ```
 
-### Создать проект django
+### Создаем проект django
 
 ```commandline
 django-admin startproject ot_project
 ```
 
-### Запуск сервера
+### Запускаем сервер для проверки
 
 ```commandline
 cd .\ot_project\
 python manage.py runserver
 ```
+
+# Базовые настройки
 
 ### Добавим возможность получать параметры через переменные окружения
 
@@ -130,8 +134,8 @@ AUTH_USER_MODEL = "user.User"
 
 ### Настройка подключения к базе данных
 
-Для целей разрабатываемого приложения достаточно возможностей СУБД SQLite, которую Django по умолчанию. Но, для учебных 
-целей будем применять серверную СУБД, например PostgreSQL.
+Для целей разрабатываемого приложения достаточно возможностей СУБД SQLite, которую Django использует по умолчанию.
+Но, для учебных целей будем применять серверную СУБД, например PostgreSQL.
 
 Изменим параметры подключения к базе данных в файле _settings.py_.
 ```python
@@ -152,11 +156,34 @@ DATABASES = {
 ```commandline
 pip install Django psycopg2
 ```
-### Создание и применение первой миграции
+### Создаем и применяем первую миграцию
 python manage.py makemigrations
 python manage.py migrate
 
-### Создание суперпользователя
+### Создаем суперпользователя
 ```commandline
 python manage.py createsuperuser --username=admin --email=admin@mail.com
+```
+
+
+# Создаем базовый шаблон
+
+Базовый шаблон будет содержать элементы интерфейса, общие для всех представлений
+
+### Настраиваем каталог с общими шаблонами
+
+Создаем каталог в корневом каталоге проекта
+```commandline
+mkdir templates
+```
+
+Прописываем параметры в файле _settings.py_.
+```python
+TEMPLATES = [
+    {
+        ...
+        'DIRS': [BASE_DIR / 'templates', ],
+        ...
+    },
+]
 ```
