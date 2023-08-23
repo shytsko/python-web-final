@@ -202,3 +202,82 @@ TEMPLATES = [
 },
 ]
 ```
+
+### Настраиваем каталог для статических файлов, не относящихся к конкретному приложению
+
+```commandline
+mkdir templates
+```
+
+Прописываем параметры в файле _settings.py_.
+
+```python
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+```
+
+### Подключение bootstrap
+
+Чтобы получить приемлемый внешний вид интерфейса приложения и, при этом, не тратить время на HTML/CSS верстку
+будем использовать фреймворк bootstrap и дополнительно пакет
+django-bootstrap5 (https://django-bootstrap5.readthedocs.io/en/latest/index.html),
+который позволяет интегрировать bootstrap в шаблоны django.
+
+Устанавливаем пакет django-bootstrap5
+
+```commandline
+pip install django-bootstrap5
+```
+
+Регистрируем приложение в файле _settings.py_.
+```python
+INSTALLED_APPS = [
+    ...
+    'django_bootstrap5',
+    ...
+]
+```
+
+### Создаем базовый шаблон
+
+Создаем базовый шаблон в файле _templates/base.html_
+
+# Приложение главной страницы
+
+### Создаем приложение 
+```commandline
+python manage.py startapp home
+```
+### Регистрируем приложение в файле _settings.py_.
+```python
+INSTALLED_APPS = [
+    ...
+    'home',
+]
+```
+
+### Создаем шаблон главной страницы _home/templates/home/home.html_
+
+### Создаем представление главной страницы в файле _home/views.py_
+
+### Создаем файле _home/urls.py_
+```python
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.home, name='home'),
+]
+```
+
+### Добавляем маршруты в файле _urls.by_ проекта
+```python
+urlpatterns = [
+    ...
+    path('/', include('home.urls'))
+]
+```
+
+ 
