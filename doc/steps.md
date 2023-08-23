@@ -58,6 +58,14 @@ cd .\ot_project\
 python manage.py runserver
 ```
 
+### Создаем файл с зависимостями
+
+```commandline
+pip freeze > requirements.txt
+```
+
+В дальнейшем эту команду нужно будет выполнять после добавления новых зависимостей
+
 # Базовые настройки
 
 ### Добавим возможность получать параметры через переменные окружения
@@ -138,6 +146,7 @@ AUTH_USER_MODEL = "user.User"
 Но, для учебных целей будем применять серверную СУБД, например PostgreSQL.
 
 Изменим параметры подключения к базе данных в файле _settings.py_.
+
 ```python
 DATABASES = {
     'default': {
@@ -150,21 +159,25 @@ DATABASES = {
     }
 }
 ```
+
 Параметры подключения необходимо будет прописать в файле _.env_ или передать другим способом через переменные среды
 
 Также необходимо установить пакет драйвера PostgreSQL
+
 ```commandline
 pip install Django psycopg2
 ```
+
 ### Создаем и применяем первую миграцию
+
 python manage.py makemigrations
 python manage.py migrate
 
 ### Создаем суперпользователя
+
 ```commandline
 python manage.py createsuperuser --username=admin --email=admin@mail.com
 ```
-
 
 # Создаем базовый шаблон
 
@@ -173,17 +186,19 @@ python manage.py createsuperuser --username=admin --email=admin@mail.com
 ### Настраиваем каталог с общими шаблонами
 
 Создаем каталог в корневом каталоге проекта
+
 ```commandline
 mkdir templates
 ```
 
 Прописываем параметры в файле _settings.py_.
+
 ```python
 TEMPLATES = [
     {
         ...
-        'DIRS': [BASE_DIR / 'templates', ],
-        ...
-    },
+    'DIRS': [BASE_DIR / 'templates', ],
+...
+},
 ]
 ```
