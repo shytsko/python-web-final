@@ -32,8 +32,7 @@ python -m venv .venv
 
 ### Создаем первый коммит
 
-### Создаем новый репозиторий на GitHub и связать с локальным
-
+### Создаем новый репозиторий на GitHub и связываем с локальным
 ```commandline
 git remote add origin https://github.com/******/python-web-final.git
 git push -u origin main
@@ -70,10 +69,6 @@ pip freeze > requirements.txt
 
 ### Добавим возможность получать параметры через переменные окружения
 
-```commandline
-django.db.backends
-```
-
 В файле settings.py добавим
 
 ```python
@@ -89,61 +84,10 @@ load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
 ```
 
-### Создаем новое приложение для управления пользователями
-
-```commandline
-python manage.py startapp user
-```
-
-Регистрируем новое приложение
-
-```python
-INSTALLED_APPS = [
-    ...
-    'user',
-]
-```
-
-### Добавляем новую модель
-
-Документация django рекомендует создавать собственную модель пользователя перед
-выполнением первой миграции, поскольку в дальнейшем это позволит упростить внесение
-изменений, если понадобится.
-
-В файле допавляем модель _user/model.py_
-
-```python
-from django.contrib.auth.models import AbstractUser
-
-
-class User(AbstractUser):
-    pass
-
-``` 
-
-Регистрируем модель в админской панели, прописываем в файле _user/admin.py_
-
-```python
-from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from .models import User
-
-admin.site.register(User, UserAdmin)
-``` 
-
-В файле _settings.py_ указываем параметр, указывающий на класс модели пользователя
-
-```python
-AUTH_USER_MODEL = "user.User"
-```
-
-В дальнейшем на класс модели пользователя нужно будет ссылаться через этот параметр.
-Также его будет возвращать функция ```django.contrib.auth.get_user_model()```
-
 ### Настройка подключения к базе данных
 
 Для целей разрабатываемого приложения достаточно возможностей СУБД SQLite, которую Django использует по умолчанию.
-Но, для учебных целей будем применять серверную СУБД, например PostgreSQL.
+Но, для учебных целей, будем применять серверную СУБД, например PostgreSQL.
 
 Изменим параметры подключения к базе данных в файле _settings.py_.
 
@@ -168,17 +112,6 @@ DATABASES = {
 pip install Django psycopg2
 ```
 
-### Создаем и применяем первую миграцию
-
-python manage.py makemigrations
-python manage.py migrate
-
-### Создаем суперпользователя
-
-```commandline
-python manage.py createsuperuser --username=admin --email=admin@mail.com
-```
-
 # Создаем базовый шаблон
 
 Базовый шаблон будет содержать элементы интерфейса, общие для всех представлений
@@ -197,9 +130,9 @@ mkdir templates
 TEMPLATES = [
     {
         ...
-    'DIRS': [BASE_DIR / 'templates', ],
-...
-},
+        'DIRS': [BASE_DIR / 'templates', ],
+        ...
+    },
 ]
 ```
 
@@ -221,9 +154,8 @@ STATICFILES_DIRS = [
 ### Подключение bootstrap
 
 Чтобы получить приемлемый внешний вид интерфейса приложения и, при этом, не тратить время на HTML/CSS верстку
-будем использовать фреймворк bootstrap и дополнительно пакет
-django-bootstrap5 (https://django-bootstrap5.readthedocs.io/en/latest/index.html),
-который позволяет интегрировать bootstrap в шаблоны django.
+будем использовать фреймворк bootstrap и дополнительно пакет `django-bootstrap5` (https://django-bootstrap5.readthedocs.io/en/latest/index.html),
+который позволяет упростить интеграцию bootstrap в шаблоны django.
 
 Устанавливаем пакет django-bootstrap5
 
@@ -243,6 +175,84 @@ INSTALLED_APPS = [
 ### Создаем базовый шаблон
 
 Создаем базовый шаблон в файле _templates/base.html_
+Это не окончательный вариант шаблона. Пункты меню взяты для примера проверки работы на текущем этапе. Также имеются
+ссылки на ресурсы, которые еще разработаны.
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load django_bootstrap5 %}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    {% bootstrap_messages %}
+    <title>{% block title %}{{ title }}{% endblock %}</title>
+</head>
+<body>
+<div class="container">
+    <nav class="navbar navbar-expand-lg bg-light">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="{% url 'home' %}">Главная</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Link</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                           aria-expanded="false">
+                            Dropdown
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">Action</a></li>
+                            <li><a class="dropdown-item" href="#">Another action</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="#">Something else here</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="navbar" id="navbarRight">
+                <ul class="navbar-nav navbar-right">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <div class="nav-link">{{ user.username }}</div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">Выход</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Вход</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+</div>
+<div class="container">
+    {% bootstrap_messages %}
+    {% block content %} CONTENT {% endblock %}
+</div>
+</body>
+</html>
+```
 
 # Приложение главной страницы
 
@@ -259,16 +269,24 @@ INSTALLED_APPS = [
 ```
 
 ### Создаем шаблон главной страницы _home/templates/home/home.html_
+Контент главной страницы добавим позже
+```html
+{% extends 'base.html' %}
+{% block content %}
+<h1>NO CONTENT </h1>
+{% endblock %}
+```
 
-### Создаем представление главной страницы в файле _home/views.py_
-
-### Создаем файле _home/urls.py_
+### Создаем в маршрут для главной страницы в файле _home/urls.py_
+Нет необходимости в представлении реализовывать какую-либо логику, поэтому не будем создавать представления,
+а воспользуемся стандартным классом `TemplateView` и необходимые параметры передадим в конструктор.  
 ```python
 from django.urls import path
-from . import views
+from django.views.generic import TemplateView
 
 urlpatterns = [
-    path('', views.home, name='home'),
+    path('', TemplateView.as_view(template_name='home/home.html',
+                                  extra_context={"title": "Главная"}), name='home'),
 ]
 ```
 
@@ -280,4 +298,88 @@ urlpatterns = [
 ]
 ```
 
- 
+# Приложение для управления пользователями
+
+### Создаем новое приложение для управления пользователями
+
+```commandline
+python manage.py startapp user
+```
+
+Регистрируем новое приложение
+
+```python
+INSTALLED_APPS = [
+    ...
+    'user',
+]
+```
+
+### Добавляем новую модель
+
+Документация django рекомендует создавать собственную модель пользователя перед
+выполнением первой миграции, поскольку в дальнейшем это позволит упростить внесение
+изменений, если понадобится.
+
+В файле _user/model.py_ добавляем модель 
+
+```python
+from django.contrib.auth.models import AbstractUser
+
+class User(AbstractUser):
+    pass
+``` 
+
+Регистрируем модель в админской панели, прописываем в файле _user/admin.py_
+
+```python
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from .models import User
+
+admin.site.register(User, UserAdmin)
+``` 
+
+В файле _settings.py_ указываем параметр, указывающий на класс модели пользователя
+
+```python
+AUTH_USER_MODEL = "user.User"
+```
+
+В дальнейшем на класс модели пользователя нужно будет ссылаться через этот параметр.
+Также его будет возвращать функция `django.contrib.auth.get_user_model()`
+
+
+### Создаем и применяем первую миграцию
+```commandline
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### Создаем суперпользователя
+
+```commandline
+python manage.py createsuperuser --username=admin --email=admin@mail.com
+```
+
+### Создаем файл _user/urls.py_
+
+Django содержит готовые представления и формы для управления пользователями. В файле `django.contrib.auth.urls`
+содержиться список _urlpatterns_ с маршрутами и представлениями. Поскольку в разрабатываемом приложении не предполагается 
+самомтоятельная регистрация пользователей, готовый список избыточен. Скопируем его в свой файл 
+_user/urls.py_ и оставим только маршруты для входа и выхода
+```python
+from django.contrib.auth import views
+from django.urls import path
+
+urlpatterns = [
+    path("login/", views.LoginView.as_view(template_name="user/login.html"), name="login"),
+    path("logout/", views.LogoutView.as_view(), name="logout"),
+]
+```
+### Добавляем параметры в файл _settings.by_ для перенаправления на главную страницу после входа или выхода
+```python
+LOGIN_REDIRECT_URL = reverse_lazy('home:home')
+LOGOUT_REDIRECT_URL = reverse_lazy('home:home')
+```
+
