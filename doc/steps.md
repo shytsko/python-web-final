@@ -393,11 +393,13 @@ urlpatterns = [
 ]
 ```
 
-### Добавляем параметры в файл _settings.by_ для перенаправления на главную страницу после входа или выхода
+### Добавляем параметры в файл _settings.by_ для перенаправления на главную страницу после входа или выхода,
+а также URL, на который пользователь будет перенаправляться для аутентификации
 
 ```python
 LOGIN_REDIRECT_URL = reverse_lazy('home')
 LOGOUT_REDIRECT_URL = reverse_lazy('home')
+LOGIN_URL = reverse_lazy('login')
 ```
 
 # Создаем приложение для управления настройками предприятия
@@ -575,3 +577,79 @@ class CustomUserAdmin(UserAdmin):
     search_fields = ("username", "first_name", "last_name", "email", 'company')
     ordering = ("username",)
 ```
+
+### Добавим классы форм в файле _company/forms.py_
+```python
+from django.forms import ModelForm, inlineformset_factory
+from .models import Company, Department
+
+
+class CompanyForm(ModelForm):
+    class Meta:
+        model = Company
+        fields = '__all__'
+
+
+DepartmentsFormSet = inlineformset_factory(Company, Department, fields=('name',))
+```
+
+### Добавим представление форм в файле _company/views.py_
+```python
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .forms import CompanyForm, DepartmentsFormSet
+
+
+@login_required
+def company_view(request):
+    context = {'title': 'Организация'}
+    company = request.user.company
+    context['company'] = company
+    if company:
+        if request.method == 'POST':
+            form = CompanyForm(request.POST, request.FILES, instance=company)
+            formset = DepartmentsFormSet(request.POST, instance=company)
+            if formset.is_valid() and form.is_valid():
+                form.save()
+                formset.save()
+        else:
+            form = CompanyForm(instance=company)
+            formset = DepartmentsFormSet(instance=company)
+        context['form'] = form
+        context['formset'] = formset
+    return render(request, 'company/company.html', context)
+```
+
+###  Создаем шаблон _company/templates/company/company.html_
+```html
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+    <h2>Организация</h2>
+    {% if company %}
+        <form method="post" class="form">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <hr>
+        <h4>Структуртные подразделения организации</h4>
+        {% bootstrap_formset formset layout='horizontal' %}
+
+        {% bootstrap_button button_type="submit" content="Сохранить" %}
+        </form>
+    {% else %}
+        {% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
+    {% endif %}
+{% endblock %}
+```
+
+###  Создаем URL для представления в файле  _company/urls.py_ 
+```python
+from django.urls import path
+from .views import company_view
+
+urlpatterns = [
+    path('', company_view, name='company')
+]
+```
+

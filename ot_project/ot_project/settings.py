@@ -137,3 +137,4 @@ AUTH_USER_MODEL = "user.User"
 
 LOGIN_REDIRECT_URL = reverse_lazy('home')
 LOGOUT_REDIRECT_URL = reverse_lazy('home')
+LOGIN_URL = reverse_lazy('login')
