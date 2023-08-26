@@ -33,6 +33,7 @@ python -m venv .venv
 ### Создаем первый коммит
 
 ### Создаем новый репозиторий на GitHub и связываем с локальным
+
 ```commandline
 git remote add origin https://github.com/******/python-web-final.git
 git push -u origin main
@@ -130,9 +131,9 @@ mkdir templates
 TEMPLATES = [
     {
         ...
-        'DIRS': [BASE_DIR / 'templates', ],
-        ...
-    },
+    'DIRS': [BASE_DIR / 'templates', ],
+...
+},
 ]
 ```
 
@@ -154,7 +155,8 @@ STATICFILES_DIRS = [
 ### Подключение bootstrap
 
 Чтобы получить приемлемый внешний вид интерфейса приложения и, при этом, не тратить время на HTML/CSS верстку
-будем использовать фреймворк bootstrap и дополнительно пакет `django-bootstrap5` (https://django-bootstrap5.readthedocs.io/en/latest/index.html),
+будем использовать фреймворк bootstrap и дополнительно
+пакет `django-bootstrap5` (https://django-bootstrap5.readthedocs.io/en/latest/index.html),
 который позволяет упростить интеграцию bootstrap в шаблоны django.
 
 Устанавливаем пакет django-bootstrap5
@@ -164,6 +166,7 @@ pip install django-bootstrap5
 ```
 
 Регистрируем приложение в файле _settings.py_.
+
 ```python
 INSTALLED_APPS = [
     ...
@@ -177,6 +180,7 @@ INSTALLED_APPS = [
 Создаем базовый шаблон в файле _templates/base.html_
 Это не окончательный вариант шаблона. Пункты меню взяты для примера проверки работы на текущем этапе. Также имеются
 ссылки на ресурсы, которые еще разработаны.
+
 ```html
 <!DOCTYPE html>
 <html lang="ru">
@@ -256,11 +260,14 @@ INSTALLED_APPS = [
 
 # Приложение главной страницы
 
-### Создаем приложение 
+### Создаем приложение
+
 ```commandline
 python manage.py startapp home
 ```
+
 ### Регистрируем приложение в файле _settings.py_.
+
 ```python
 INSTALLED_APPS = [
     ...
@@ -269,7 +276,9 @@ INSTALLED_APPS = [
 ```
 
 ### Создаем шаблон главной страницы _home/templates/home/home.html_
+
 Контент главной страницы добавим позже
+
 ```html
 {% extends 'base.html' %}
 {% block content %}
@@ -278,8 +287,10 @@ INSTALLED_APPS = [
 ```
 
 ### Создаем в маршрут для главной страницы в файле _home/urls.py_
+
 Нет необходимости в представлении реализовывать какую-либо логику, поэтому не будем создавать представления,
-а воспользуемся стандартным классом `TemplateView` и необходимые параметры передадим в конструктор.  
+а воспользуемся стандартным классом `TemplateView` и необходимые параметры передадим в конструктор.
+
 ```python
 from django.urls import path
 from django.views.generic import TemplateView
@@ -291,6 +302,7 @@ urlpatterns = [
 ```
 
 ### Добавляем маршруты в файле _urls.by_ проекта
+
 ```python
 urlpatterns = [
     ...
@@ -321,10 +333,11 @@ INSTALLED_APPS = [
 выполнением первой миграции, поскольку в дальнейшем это позволит упростить внесение
 изменений, если понадобится.
 
-В файле _user/model.py_ добавляем модель 
+В файле _user/model.py_ добавляем модель
 
 ```python
 from django.contrib.auth.models import AbstractUser
+
 
 class User(AbstractUser):
     pass
@@ -349,8 +362,8 @@ AUTH_USER_MODEL = "user.User"
 В дальнейшем на класс модели пользователя нужно будет ссылаться через этот параметр.
 Также его будет возвращать функция `django.contrib.auth.get_user_model()`
 
-
 ### Создаем и применяем первую миграцию
+
 ```commandline
 python manage.py makemigrations
 python manage.py migrate
@@ -365,9 +378,11 @@ python manage.py createsuperuser --username=admin --email=admin@mail.com
 ### Создаем файл _user/urls.py_
 
 Django содержит готовые представления и формы для управления пользователями. В файле `django.contrib.auth.urls`
-содержиться список _urlpatterns_ с маршрутами и представлениями. Поскольку в разрабатываемом приложении не предполагается 
-самомтоятельная регистрация пользователей, готовый список избыточен. Скопируем его в свой файл 
+содержиться список _urlpatterns_ с маршрутами и представлениями. Поскольку в разрабатываемом приложении не
+предполагается
+самомтоятельная регистрация пользователей, готовый список избыточен. Скопируем его в свой файл
 _user/urls.py_ и оставим только маршруты для входа и выхода
+
 ```python
 from django.contrib.auth import views
 from django.urls import path
@@ -377,9 +392,149 @@ urlpatterns = [
     path("logout/", views.LogoutView.as_view(), name="logout"),
 ]
 ```
+
 ### Добавляем параметры в файл _settings.by_ для перенаправления на главную страницу после входа или выхода
+
 ```python
-LOGIN_REDIRECT_URL = reverse_lazy('home:home')
-LOGOUT_REDIRECT_URL = reverse_lazy('home:home')
+LOGIN_REDIRECT_URL = reverse_lazy('home')
+LOGOUT_REDIRECT_URL = reverse_lazy('home')
 ```
 
+# Создаем приложение для управления настройками предприятия
+
+### Создаем новое приложение
+
+```commandline
+python manage.py startapp company
+```
+
+### Регистрируем новое приложение в файле _settings.py_.
+
+```python
+INSTALLED_APPS = [
+    ...
+    'company',
+]
+```
+
+### Добавляем маршруты в файле _urls.by_ проекта
+
+```python
+urlpatterns = [
+    ...
+    path('company/', include('company.urls')),
+]
+```
+
+### Создаем модели
+
+```python
+class Company(models.Model):
+    """
+    Данные организации
+    name - Название организации
+    unp -  УНП
+    address - адрес
+    tel - телефон
+    fax - факс
+    email - email
+    head - руководитель организации
+    """
+    name = models.CharField(max_length=100)
+    unp = models.CharField(max_length=9)
+    address = models.CharField(max_length=100)
+    tel = models.CharField(max_length=20, null=True, blank=True)
+    fax = models.CharField(max_length=20, null=True, blank=True)
+    email = models.EmailField(max_length=15)
+
+
+class Department(models.Model):
+    """
+    Структурные подразделения организации
+    company - организация
+    name - наименование структурного подразделения
+    head - руководитель структурного подразделения
+    """
+    company = models.ForeignKey("Company", related_name="departments", on_delete=models.PROTECT)
+    name = models.CharField(max_length=100)
+```
+
+### Регистрируем модели в панели администратора в файле _company/admin.py_
+
+```python
+from django.contrib import admin
+from .models import Company, Department
+
+admin.site.register(Company)
+admin.site.register(Department)
+```
+
+### Создадим и выполним миграцию
+
+```commandline
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### Добавим в модель пользователя ссылку на модель Company.
+
+Это необходимо, чтобы иметь возможность ограничивать доступ пользователю только к данным той организации,
+с которой о связан
+
+```python
+class User(AbstractUser):
+    company = models.ForeignKey("Company", null=True, default=None, related_name="+", on_delete=models.PROTECT)
+```
+
+### Снова создадим и выполним миграцию
+
+```commandline
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### Внесем изменения в настройки панели администратора
+Создадим пользовательскую модель интерфейса администратора и изменим регистрацию модели User в файле.
+Файл _user/admin.py_
+```python
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from .models import User
+from django.utils.translation import gettext_lazy as _
+
+
+@admin.register(User)
+class CustomUserAdmin(UserAdmin):
+    fieldsets = (
+        (None, {"fields": ("username", "password", "company")}),
+        (_("Personal info"), {"fields": ("first_name", "last_name", "email")}),
+        (
+            _("Permissions"),
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
+        (_("Important dates"), {"fields": ("last_login", "date_joined")}),
+    )
+
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("username", "password1", "password2", "company"),
+            },
+        ),
+    )
+
+    list_display = ("username", "email", "first_name", "last_name", "is_staff", 'company')
+    list_filter = ("is_staff", "is_superuser", "is_active", "groups", 'company')
+    search_fields = ("username", "first_name", "last_name", "email", 'company')
+    ordering = ("username",)
+```
