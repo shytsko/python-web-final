@@ -393,8 +393,7 @@ urlpatterns = [
 ]
 ```
 
-### Добавляем параметры в файл _settings.by_ для перенаправления на главную страницу после входа или выхода,
-а также URL, на который пользователь будет перенаправляться для аутентификации
+### Добавляем параметры в файл _settings.by_ для перенаправления на главную страницу после входа или выхода, а также URL, на который пользователь будет перенаправляться для аутентификации
 
 ```python
 LOGIN_REDIRECT_URL = reverse_lazy('home')
@@ -653,3 +652,141 @@ urlpatterns = [
 ]
 ```
 
+# Создаем приложение для управления настройками предприятия
+
+### Создаем новое приложение
+
+```commandline
+python manage.py startapp company
+```
+
+### Регистрируем новое приложение в файле _settings.py_.
+
+```python
+INSTALLED_APPS = [
+    ...
+    'company',
+]
+```
+
+### Добавляем маршруты в файле _urls.by_ проекта
+
+```python
+urlpatterns = [
+    ...
+    path('company/', include('company.urls')),
+]
+```
+
+### Создаем модели
+
+```python
+class Company(models.Model):
+    """
+    Данные организации
+    name - Название организации
+    unp -  УНП
+    address - адрес
+    tel - телефон
+    fax - факс
+    email - email
+    head - руководитель организации
+    """
+    name = models.CharField(max_length=100)
+    unp = models.CharField(max_length=9)
+    address = models.CharField(max_length=100)
+    tel = models.CharField(max_length=20, null=True, blank=True)
+    fax = models.CharField(max_length=20, null=True, blank=True)
+    email = models.EmailField(max_length=15)
+
+
+class Department(models.Model):
+    """
+    Структурные подразделения организации
+    company - организация
+    name - наименование структурного подразделения
+    head - руководитель структурного подразделения
+    """
+    company = models.ForeignKey("Company", related_name="departments", on_delete=models.PROTECT)
+    name = models.CharField(max_length=100)
+```
+
+### Регистрируем модели в панели администратора в файле _company/admin.py_
+
+```python
+from django.contrib import admin
+from .models import Company, Department
+
+admin.site.register(Company)
+admin.site.register(Department)
+```
+
+### Создадим и выполним миграцию
+
+```commandline
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### Добавим в модель пользователя ссылку на модель Company.
+
+Это необходимо, чтобы иметь возможность ограничивать доступ пользователю только к данным той организации,
+с которой о связан
+
+```python
+class User(AbstractUser):
+    company = models.ForeignKey("Company", null=True, default=None, related_name="+", on_delete=models.PROTECT)
+```
+
+### Снова создадим и выполним миграцию
+
+```commandline
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### Внесем изменения в настройки панели администратора
+Создадим пользовательскую модель интерфейса администратора и изменим регистрацию модели User в файле.
+Файл _user/admin.py_
+```python
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from .models import User
+from django.utils.translation import gettext_lazy as _
+
+
+@admin.register(User)
+class CustomUserAdmin(UserAdmin):
+    fieldsets = (
+        (None, {"fields": ("username", "password", "company")}),
+        (_("Personal info"), {"fields": ("first_name", "last_name", "email")}),
+        (
+            _("Permissions"),
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
+        (_("Important dates"), {"fields": ("last_login", "date_joined")}),
+    )
+
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("username", "password1", "password2", "company"),
+            },
+        ),
+    )
+
+    list_display = ("username", "email", "first_name", "last_name", "is_staff", 'company')
+    list_filter = ("is_staff", "is_superuser", "is_active", "groups", 'company')
+    search_fields = ("username", "first_name", "last_name", "email", 'company')
+    ordering = ("username",)
+```
