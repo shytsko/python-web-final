@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+
+{% if company %}
+<h2>Cведения о структурном подразделени</h2>
+{{ department }}
+
+{% else %}
+{% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
+{% endif %}
+
+{% endblock %}

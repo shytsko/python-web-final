@@ -1,5 +1,6 @@
 from django.core.validators import RegexValidator
 from django.db import models
+from django.urls import reverse_lazy
 
 
 class Company(models.Model):
@@ -21,7 +22,7 @@ class Company(models.Model):
     address = models.CharField(verbose_name="Адрес", max_length=100)
     tel = models.CharField(verbose_name="Номер телефона", max_length=20, null=True, blank=True)
     fax = models.CharField(verbose_name="Номер факс", max_length=20, null=True, blank=True)
-    email = models.EmailField(verbose_name="E-mail", max_length=15, unique=True, )
+    email = models.EmailField(verbose_name="E-mail", max_length=100, unique=True, )
 
     # head = models.ForeignKey("employee.Employee", null=True, default=None, related_name="+", on_delete=models.SET_NULL)
 
@@ -53,3 +54,9 @@ class Department(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+
+    def get_absolute_url(self):
+        return reverse_lazy("department_detail", kwargs={"depatrment_id": self.pk})
+
+    def get_owner_company(self):
+        return self.company
