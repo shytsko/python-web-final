@@ -57,3 +57,6 @@ class Department(models.Model):
 
     def get_absolute_url(self):
         return reverse_lazy("department_detail", kwargs={"depatrment_id": self.pk})
+
+    def get_owner_company(self):
+        return self.company

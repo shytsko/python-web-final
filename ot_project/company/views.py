@@ -1,9 +1,11 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, UpdateView
 from .models import Company, Department
 
 from .forms import DepartmentsFormSet
+
 
 class CompanyDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'company'
@@ -41,6 +43,12 @@ class DepartmentDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'department'
     template_name = 'company/department_detail.html'
     pk_url_kwarg = 'depatrment_id'
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset=None)
+        if self.request.user.company != obj.get_owner_company():
+            raise PermissionDenied(f"Структурное подразделение не принадлежит организации пользователя")
+        return obj
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
