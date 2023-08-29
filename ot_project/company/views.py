@@ -1,23 +1,49 @@
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from .forms import CompanyForm, DepartmentsFormSet
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from django.views.generic import DetailView, UpdateView
+from .models import Company, Department
+
+from .forms import DepartmentsFormSet
+
+class CompanyDetailView(LoginRequiredMixin, DetailView):
+    context_object_name = 'company'
+    template_name = 'company/company_detail.html'
+
+    def get_object(self, queryset=None):
+        return self.request.user.company
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Организация'
+        if self.object:
+            context['departments'] = self.object.departments.all()
+        return context
 
 
-@login_required
-def company_view(request):
-    context = {'title': 'Организация'}
-    company = request.user.company
-    context['company'] = company
-    if company:
-        if request.method == 'POST':
-            form = CompanyForm(request.POST, request.FILES, instance=company)
-            formset = DepartmentsFormSet(request.POST, instance=company)
-            if formset.is_valid() and form.is_valid():
-                form.save()
-                formset.save()
-        else:
-            form = CompanyForm(instance=company)
-            formset = DepartmentsFormSet(instance=company)
-        context['form'] = form
-        context['formset'] = formset
-    return render(request, 'company/company.html', context)
+class CompanyUpdateView(LoginRequiredMixin, UpdateView):
+    context_object_name = 'company'
+    fields = '__all__'
+    template_name = 'company/company_update.html'
+    success_url = reverse_lazy('company')
+
+    def get_object(self, queryset=None):
+        return self.request.user.company
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Организация'
+        context['cancel_url'] = reverse_lazy('company')
+        return context
+
+
+class DepartmentDetailView(LoginRequiredMixin, DetailView):
+    model = Department
+    context_object_name = 'department'
+    template_name = 'company/department_detail.html'
+    pk_url_kwarg = 'depatrment_id'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['company'] = self.request.user.company
+        context['title'] = self.object.name
+        return context

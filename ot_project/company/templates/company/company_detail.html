@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+
+{% if company %}
+<h2>Общие сведения об организации</h2>
+<table class="table">
+    <tbody>
+    <tr>
+        <th scope="row">Название:</th>
+        <td>{{ company.name }}</td>
+    </tr>
+    <tr>
+        <th scope="row">УНП:</th>
+        <td>{{ company.unp }}</td>
+    </tr>
+    <tr>
+        <th scope="row">Адрес:</th>
+        <td>{{ company.address }}</td>
+    </tr>
+    <tr>
+        <th scope="row">Номер телефона:</th>
+        <td>{{ company.tel }}</td>
+    </tr>
+    <tr>
+        <th scope="row">Номер факса:</th>
+        <td>{{ company.fax }}</td>
+    </tr>
+    <tr>
+        <th scope="row">Email:</th>
+        <td>{{ company.email }}</td>
+    </tr>
+    <tr>
+        <th scope="row">Руководитель:</th>
+        <td> (добавить позже)</td>
+    </tr>
+    </tbody>
+</table>
+<a class="btn btn-primary mt-3" href="{% url 'company_update' %}" role="button">Редактировать</a>
+<hr>
+
+<h4>Структуртные подразделения организации</h4>
+<div class="list-group">
+    {% for department in departments %}
+    <a href="{{ department.get_absolute_url }}" class="list-group-item list-group-item-action">{{ department }}</a>
+    {% endfor %}
+</div>
+<a class="btn btn-primary mt-3" href="{% url 'company_update' %}" role="button">Редактировать</a>
+{% else %}
+    {% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
+{% endif %}
+
+{% endblock %}
