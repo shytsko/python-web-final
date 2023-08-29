@@ -38,6 +38,23 @@ class CompanyUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
 
+class CompanyDepartmentsSetUpdateView(LoginRequiredMixin, UpdateView):
+    template_name = 'company/departments_update.html'
+    success_url = reverse_lazy('company')
+
+    def get_object(self, queryset=None):
+        return self.request.user.company
+
+    def get_form(self, **kwargs):
+        return DepartmentsFormSet(instance=self.get_object())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['company'] = self.get_object()
+        context['title'] = "Структурные подразделения"
+        return context
+
+
 class DepartmentDetailView(LoginRequiredMixin, DetailView):
     model = Department
     context_object_name = 'department'

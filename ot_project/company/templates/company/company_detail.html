@@ -46,7 +46,7 @@
     <a href="{{ department.get_absolute_url }}" class="list-group-item list-group-item-action">{{ department }}</a>
     {% endfor %}
 </div>
-<a class="btn btn-primary mt-3" href="{% url 'company_update' %}" role="button">Редактировать</a>
+<a class="btn btn-primary mt-3" href="{% url 'departments_update' %}" role="button">Редактировать</a>
 {% else %}
     {% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
 {% endif %}
