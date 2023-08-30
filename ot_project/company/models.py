@@ -1,4 +1,4 @@
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse_lazy
 
@@ -43,7 +43,7 @@ class Department(models.Model):
     head - руководитель структурного подразделения
     """
     company = models.ForeignKey("Company", related_name="departments", on_delete=models.PROTECT)
-    name = models.CharField(verbose_name="Название", max_length=100)
+    name = models.CharField(verbose_name="Название", max_length=100, )
 
     # head = models.ForeignKey("employee.Employee", null=True, default=None, related_name="+", on_delete=models.SET_NULL)
 
@@ -51,6 +51,7 @@ class Department(models.Model):
         ordering = ["name"]
         verbose_name = "Подразделение"
         verbose_name_plural = "Подразделения"
+        unique_together = ('company', 'name')
 
     def __str__(self):
         return f"{self.name}"
@@ -64,7 +65,7 @@ class Department(models.Model):
 
 class DangerousWork(models.Model):
     company = models.ForeignKey("Company", related_name="dangerous_works", on_delete=models.PROTECT)
-    name = models.CharField(verbose_name="Название", max_length=250)
+    name = models.CharField(verbose_name="Название", max_length=250, unique=True)
 
     class Meta:
         ordering = ["name"]
@@ -83,8 +84,8 @@ class DangerousWork(models.Model):
 
 class MedicWork(models.Model):
     company = models.ForeignKey("Company", related_name="medic_works", on_delete=models.PROTECT)
-    name = models.CharField(verbose_name="Название", max_length=250)
-    punct = models.CharField(verbose_name="Пункт приложени", max_length=10)
+    name = models.CharField(verbose_name="Название", max_length=250, unique=True)
+    punct = models.CharField(verbose_name="Пункт приложения", max_length=10)
 
     class Meta:
         ordering = ["name"]
@@ -101,3 +102,72 @@ class MedicWork(models.Model):
         return self.company
 
 
+class FactorGroup(models.Model):
+    group = models.CharField(verbose_name="Группа", max_length=15, unique=True)
+
+    def __str__(self):
+        return f"{self.group}"
+
+    class Meta:
+        verbose_name = "Группа вредных и опасных производственных факторов"
+        verbose_name_plural = "Группа вредных и опасных производственных факторов"
+
+
+CONDITION_CLASS_CHOICES = (
+    ("2", "2 - Допустимые"),
+    ("3.1", "3.1 - Вредные первой степени"),
+    ("3.2", "3.2 - Вредные второй степени"),
+    ("3.3", "3.3 - Вредные третьей степени"),
+    ("3.4", "3.4 - Вредные четвертой степени"),
+    ("4", "4 - Опасные"),
+)
+
+PERIOD_CHOICES = (
+    (0, "Не требуется"),
+    (1, "1 год"),
+    (2, "2 года"),
+    (3, "3 года"),
+)
+
+
+class Factor(models.Model):
+    company = models.ForeignKey("Company", related_name="factors", on_delete=models.PROTECT)
+    group = models.ForeignKey("FactorGroup", verbose_name="Группа", related_name="factors",
+                              on_delete=models.SET_NULL, null=True)
+    name = models.CharField(verbose_name="Название", max_length=250, unique=True)
+    punct = models.CharField(verbose_name="Пункт приложения", max_length=10)
+
+    def __str__(self):
+        return f"{self.name}"
+
+    def save(self, *args, **kwargs):
+        pre_save_pk = self.pk
+        super().save(*args, **kwargs)
+        if not pre_save_pk:
+            for condition_class, _ in CONDITION_CLASS_CHOICES:
+                FactorCondition.objects.create(factor=self, condition_class=condition_class)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Вредный или опасный производственный фактор"
+        verbose_name_plural = "Вредные и опасные производственные факторы"
+
+    # def get_absolute_url(self):
+    #     return reverse_lazy("factor_detail", kwargs={"factor_id": self.pk})
+
+    def get_owner_company(self):
+        return self.company
+
+
+class FactorCondition(models.Model):
+    factor = models.ForeignKey("Factor", verbose_name="Фактор", related_name="conditions", on_delete=models.CASCADE)
+    condition_class = models.CharField(max_length=250, verbose_name="Класс условий", choices=CONDITION_CLASS_CHOICES)
+    is_need_prev_medical = models.BooleanField(default=False, verbose_name="Необходим предварительный медосмотр")
+    medical_period = models.PositiveSmallIntegerField(verbose_name="Периодичность медосмотров",
+                                                      default=0, choices=PERIOD_CHOICES)
+
+    class Meta:
+        ordering = ["factor"]
+        verbose_name = "Класс условий труда"
+        verbose_name_plural = "Классы условий труда"
+        unique_together = ('factor', 'condition_class')
