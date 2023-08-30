@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+    <h2>Работы, при выполнении которых есть необходимость в профессиональном отборе, в организации {{ company.name }}</h2>
+     {% if company %}
+        <form method="post" class="form">
+            {{ form }}
+            {% csrf_token %}
+            {% for formset in inlines %}
+                {% bootstrap_formset formset layout='horizontal' %}
+            {% endfor %}
+            {% bootstrap_button button_type="submit" content="Сохранить" %}
+            <a class="btn btn-primary" href="{% url 'company' %}" role="button">Отмена</a>
+        </form>
+    {% else %}
+        {% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
+    {% endif %}
+{% endblock %}

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Company, Department, DangerousWork
+from .models import Company, Department, DangerousWork, MedicWork
 
 
 class DepartmentInline(admin.TabularInline):
@@ -9,6 +9,11 @@ class DepartmentInline(admin.TabularInline):
 
 class DangerousWorkInline(admin.TabularInline):
     model = DangerousWork
+    extra = 1
+
+
+class MedicWorkInline(admin.TabularInline):
+    model = MedicWork
     extra = 1
 
 
@@ -27,6 +32,12 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 
 @admin.register(DangerousWork)
+class DangerousWorkAdmin(admin.ModelAdmin):
+    list_display = ('company', 'name',)
+    ordering = ('company', 'name',)
+    list_filter = ('company',)
+
+@admin.register(MedicWork)
 class DangerousWorkAdmin(admin.ModelAdmin):
     list_display = ('company', 'name',)
     ordering = ('company', 'name',)

@@ -56,6 +56,15 @@
     {% endfor %}
 </div>
 <a class="btn btn-primary mt-3" href="{% url 'dangerous_works_update' %}" role="button">Редактировать</a>
+<hr>
+
+<h4>Работы, при выполнении которых есть необходимость в профессиональном отборе</h4>
+<div class="list-group">
+    {% for work in medic_works %}
+    <a href="{{ work.get_absolute_url }}" class="list-group-item list-group-item-action">{{ work }}</a>
+    {% endfor %}
+</div>
+<a class="btn btn-primary mt-3" href="{% url 'medic_works_update' %}" role="button">Редактировать</a>
 {% else %}
     {% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
 {% endif %}
