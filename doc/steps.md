@@ -790,3 +790,22 @@ class CustomUserAdmin(UserAdmin):
     search_fields = ("username", "first_name", "last_name", "email", 'company')
     ordering = ("username",)
 ```
+
+### Установим пакет для создания представлений из класса FormSet
+
+```commandline
+pip install django-extra-views
+```
+
+```python
+### Регистрируем приложение
+INSTALLED_APPS = [
+    ...
+    'extra_views',
+]
+```
+
+
+
+
+

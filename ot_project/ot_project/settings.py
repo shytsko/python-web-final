@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'user',
     'home',
     'company',
+    'extra_views',
 ]
 
 MIDDLEWARE = [

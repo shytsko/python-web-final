@@ -1,10 +1,10 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, UpdateView
+from extra_views import InlineFormSetFactory, UpdateWithInlinesView
 from .models import Company, Department
-
-from .forms import DepartmentsFormSet
+from .forms import CompanyHiddenForm
 
 
 class CompanyDetailView(LoginRequiredMixin, DetailView):
@@ -38,21 +38,32 @@ class CompanyUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
 
-class CompanyDepartmentsSetUpdateView(LoginRequiredMixin, UpdateView):
-    template_name = 'company/departments_update.html'
+class CompanyInlinesSetUpdateView(UpdateWithInlinesView):
+    model = Company
+    form_class = CompanyHiddenForm
+    context_object_name = 'company'
     success_url = reverse_lazy('company')
+    title = ''
 
     def get_object(self, queryset=None):
         return self.request.user.company
 
-    def get_form(self, **kwargs):
-        return DepartmentsFormSet(instance=self.get_object())
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['company'] = self.get_object()
-        context['title'] = "Структурные подразделения"
+        context['title'] = self.title
+        context['cancel_url'] = reverse_lazy('company')
         return context
+
+
+class DepartmentInline(InlineFormSetFactory):
+    model = Department
+    fields = ('name',)
+
+
+class CompanyDepartmentsSetUpdateView(LoginRequiredMixin, CompanyInlinesSetUpdateView):
+    inlines = (DepartmentInline,)
+    template_name = 'company/departments_update.html'
+    title = 'Структурные подразделения'
 
 
 class DepartmentDetailView(LoginRequiredMixin, DetailView):

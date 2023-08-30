@@ -1,11 +1,9 @@
-from django.forms import ModelForm, inlineformset_factory
-from .models import Company, Department
+from django.forms import ModelForm, HiddenInput
+from .models import Company
 
 
-# class CompanyForm(ModelForm):
-#     class Meta:
-#         model = Company
-#         fields = '__all__'
-
-
-DepartmentsFormSet = inlineformset_factory(Company, Department, fields=('name',))
+class CompanyHiddenForm(ModelForm):
+    class Meta:
+        model = Company
+        fields = ('unp',)
+        widgets = {'unp': HiddenInput()}
