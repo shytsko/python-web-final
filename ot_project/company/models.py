@@ -60,3 +60,22 @@ class Department(models.Model):
 
     def get_owner_company(self):
         return self.company
+
+
+class DangerousWork(models.Model):
+    company = models.ForeignKey("Company", related_name="dangerous_works", on_delete=models.PROTECT)
+    name = models.CharField(verbose_name="Название", max_length=250)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Опасная работа"
+        verbose_name_plural = "Опасные работы"
+
+    def __str__(self):
+        return f"{self.name}"
+
+    def get_absolute_url(self):
+        return reverse_lazy("dangerous_work_detail", kwargs={"dangerous_work_id": self.pk})
+
+    def get_owner_company(self):
+        return self.company
