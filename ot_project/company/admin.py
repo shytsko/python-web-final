@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Company, Department, DangerousWork, MedicWork, Factor, FactorGroup, FactorCondition
+from .models import Company, Department, DangerousWork, MedicWork, Factor, FactorCondition
 
 
 class DepartmentInline(admin.TabularInline):
@@ -50,17 +50,13 @@ class DangerousWorkAdmin(admin.ModelAdmin):
     list_filter = ('company',)
 
 
-@admin.register(FactorGroup)
-class FactorGroupAdmin(admin.ModelAdmin):
-    list_display = ('group',)
-    ordering = ('group',)
-
-
 class FactorConditionInline(admin.TabularInline):
     model = FactorCondition
     extra = 0
     can_delete = False
     max_num = 0
+    fields = ('condition_class', 'is_need_prev_medical', 'medical_period')
+    readonly_fields = ('condition_class',)
 
 
 @admin.register(Factor)

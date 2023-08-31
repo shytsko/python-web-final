@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse_lazy
@@ -102,49 +103,48 @@ class MedicWork(models.Model):
         return self.company
 
 
-class FactorGroup(models.Model):
-    group = models.CharField(verbose_name="Группа", max_length=15, unique=True)
-
-    def __str__(self):
-        return f"{self.group}"
-
-    class Meta:
-        verbose_name = "Группа вредных и опасных производственных факторов"
-        verbose_name_plural = "Группа вредных и опасных производственных факторов"
-
-
-CONDITION_CLASS_CHOICES = (
-    ("2", "2 - Допустимые"),
-    ("3.1", "3.1 - Вредные первой степени"),
-    ("3.2", "3.2 - Вредные второй степени"),
-    ("3.3", "3.3 - Вредные третьей степени"),
-    ("3.4", "3.4 - Вредные четвертой степени"),
-    ("4", "4 - Опасные"),
-)
-
-PERIOD_CHOICES = (
-    (0, "Не требуется"),
-    (1, "1 год"),
-    (2, "2 года"),
-    (3, "3 года"),
-)
-
-
 class Factor(models.Model):
+    class GroupChoices(models.IntegerChoices):
+        CHEMICAL = 1, "Химические"
+        BIOLOGICAL = 2, "Биологические"
+        DUST = 3, "Пыли и аэрозоли"
+        PHYSICAL = 4, "Физические"
+        HEAVY = 5, "Тяжесть"
+        STRESSFUL = 6, "Напряженность"
+
+    class DangerClassChoices(models.IntegerChoices):
+        NOT_APPLY = 0, "Не применяется"
+        CLASS_1 = 1, "1"
+        CLASS_2 = 2, "2"
+        CLASS_3 = 3, "3"
+        CLASS_4 = 4, "4"
+
     company = models.ForeignKey("Company", related_name="factors", on_delete=models.PROTECT)
-    group = models.ForeignKey("FactorGroup", verbose_name="Группа", related_name="factors",
-                              on_delete=models.SET_NULL, null=True)
+    group = models.PositiveSmallIntegerField(verbose_name="Группа", choices=GroupChoices.choices)
     name = models.CharField(verbose_name="Название", max_length=250, unique=True)
     punct = models.CharField(verbose_name="Пункт приложения", max_length=10)
+    danger_class = models.PositiveSmallIntegerField(verbose_name="Класс опасности", choices=DangerClassChoices.choices,
+                                                    default=DangerClassChoices.NOT_APPLY)
+    is_allergen = models.BooleanField(verbose_name="Аллерген", default=False)
+    is_carcinogen = models.BooleanField(verbose_name="Канцероген", default=False)
 
     def __str__(self):
         return f"{self.name}"
+
+    def clean(self):
+        if self.group in {self.GroupChoices.CHEMICAL, self.GroupChoices.BIOLOGICAL, self.GroupChoices.DUST}:
+            if self.danger_class == self.DangerClassChoices.NOT_APPLY:
+                raise ValidationError("Для фактора должен быть установлен класс опасности")
+        else:
+            self.danger_class = self.DangerClassChoices.NOT_APPLY
+            self.is_allergen = False
+            self.is_carcinogen = False
 
     def save(self, *args, **kwargs):
         pre_save_pk = self.pk
         super().save(*args, **kwargs)
         if not pre_save_pk:
-            for condition_class, _ in CONDITION_CLASS_CHOICES:
+            for condition_class in FactorCondition.ConditionChoices.values:
                 FactorCondition.objects.create(factor=self, condition_class=condition_class)
 
     class Meta:
@@ -160,11 +160,25 @@ class Factor(models.Model):
 
 
 class FactorCondition(models.Model):
+    class PeriodChoices(models.IntegerChoices):
+        YEAR_1 = 1, "1 год"
+        YEAR_2 = 2, "2 года"
+        YEAR_3 = 3, "3 года"
+        __empty__ = "Не требуется"
+
+    class ConditionChoices(models.TextChoices):
+        CONDITION_2 = "2", "2"
+        CONDITION_3_1 = "3.1", "3.1"
+        CONDITION_3_2 = "3.2", "3.2"
+        CONDITION_3_3 = "3.3", "3.3"
+        CONDITION_3_4 = "3.4", "3.4"
+        CONDITION_4 = "4", "4"
+
     factor = models.ForeignKey("Factor", verbose_name="Фактор", related_name="conditions", on_delete=models.CASCADE)
-    condition_class = models.CharField(max_length=250, verbose_name="Класс условий", choices=CONDITION_CLASS_CHOICES)
+    condition_class = models.CharField(max_length=250, verbose_name="Класс условий", choices=ConditionChoices.choices)
     is_need_prev_medical = models.BooleanField(default=False, verbose_name="Необходим предварительный медосмотр")
-    medical_period = models.PositiveSmallIntegerField(verbose_name="Периодичность медосмотров",
-                                                      default=0, choices=PERIOD_CHOICES)
+    medical_period = models.SmallIntegerField(verbose_name="Периодичность медосмотров",
+                                              choices=PeriodChoices.choices, blank=True, null=True)
 
     class Meta:
         ordering = ["factor"]
