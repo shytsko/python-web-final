@@ -2,8 +2,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, UpdateView
-from extra_views import InlineFormSetFactory, UpdateWithInlinesView
-from .models import Company, Department, DangerousWork, MedicWork
+from extra_views import InlineFormSetFactory, UpdateWithInlinesView, InlineFormSetView
+from .models import Company, Department, DangerousWork, MedicWork, Factor, FactorCondition
 from .forms import CompanyHiddenForm
 
 
@@ -21,6 +21,7 @@ class CompanyDetailView(LoginRequiredMixin, DetailView):
             context['departments'] = self.object.departments.all()
             context['dangerous_works'] = self.object.dangerous_works.all()
             context['medic_works'] = self.object.medic_works.all()
+            context['factors'] = self.object.factors.all()
         return context
 
 
@@ -127,6 +128,7 @@ class DangerousWorkDetailView(LoginRequiredMixin, DetailView):
         context['title'] = self.object.name
         return context
 
+
 class MedicWorkDetailView(LoginRequiredMixin, DetailView):
     model = MedicWork
     context_object_name = 'work'
@@ -141,6 +143,26 @@ class MedicWorkDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['company'] = self.request.user.company
+        context['title'] = self.object.name
+        return context
+
+
+class FactorDetailView(LoginRequiredMixin, DetailView):
+    model = Factor
+    context_object_name = 'factor'
+    template_name = 'company/factor_detail.html'
+    pk_url_kwarg = 'factor_id'
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        if self.request.user.company != obj.get_owner_company():
+            raise PermissionDenied(f"Объект не принадлежит не принадлежит организации пользователя")
+        return obj
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['conditions'] = self.object.conditions.all()
         context['company'] = self.request.user.company
         context['title'] = self.object.name
         return context

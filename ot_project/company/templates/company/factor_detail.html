@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+
+{% if company %}
+<h2>{{ factor | capfirst }}</h2>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Класс условий труда</th>
+      <th scope="col">Необходим предварительный медосмотр</th>
+      <th scope="col">Периодичность медосмотров</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for condition in conditions %}
+    <tr>
+      <th scope="row">{{ condition.condition_class }}</th>
+      <td>{% if condition.is_need_prev_medical %} Да {% else %} Нет {% endif %}</td>
+      <td>{% if not condition.medical_period %} Не требуется {% else %} {{ condition.medical_period }} {% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+
+
+{% else %}
+{% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
+{% endif %}
+
+{% endblock %}

@@ -38,8 +38,8 @@
     </tbody>
 </table>
 <a class="btn btn-primary mt-3" href="{% url 'company_update' %}" role="button">Редактировать</a>
-<hr>
 
+<hr>
 <h4>Структуртные подразделения организации</h4>
 <div class="list-group">
     {% for department in departments %}
@@ -47,8 +47,8 @@
     {% endfor %}
 </div>
 <a class="btn btn-primary mt-3" href="{% url 'departments_update' %}" role="button">Редактировать</a>
-<hr>
 
+<hr>
 <h4>Работы с повышенной опаснстью</h4>
 <div class="list-group">
     {% for work in dangerous_works %}
@@ -56,8 +56,8 @@
     {% endfor %}
 </div>
 <a class="btn btn-primary mt-3" href="{% url 'dangerous_works_update' %}" role="button">Редактировать</a>
-<hr>
 
+<hr>
 <h4>Работы, при выполнении которых есть необходимость в профессиональном отборе</h4>
 <div class="list-group">
     {% for work in medic_works %}
@@ -65,8 +65,16 @@
     {% endfor %}
 </div>
 <a class="btn btn-primary mt-3" href="{% url 'medic_works_update' %}" role="button">Редактировать</a>
+
+<h4>Вредные и опасные производственные факторы</h4>
+<div class="list-group">
+    {% for factor in factors %}
+    <a href="{{ factor.get_absolute_url }}" class="list-group-item list-group-item-action">{{ factor }}</a>
+    {% endfor %}
+</div>
+<a class="btn btn-primary mt-3" href="#" role="button">Редактировать</a>
 {% else %}
-    {% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
+{% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
 {% endif %}
 
 {% endblock %}

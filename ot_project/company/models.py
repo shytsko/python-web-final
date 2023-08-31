@@ -152,8 +152,8 @@ class Factor(models.Model):
         verbose_name = "Вредный или опасный производственный фактор"
         verbose_name_plural = "Вредные и опасные производственные факторы"
 
-    # def get_absolute_url(self):
-    #     return reverse_lazy("factor_detail", kwargs={"factor_id": self.pk})
+    def get_absolute_url(self):
+        return reverse_lazy("factor_detail", kwargs={"factor_id": self.pk})
 
     def get_owner_company(self):
         return self.company
@@ -175,7 +175,7 @@ class FactorCondition(models.Model):
         CONDITION_4 = "4", "4"
 
     factor = models.ForeignKey("Factor", verbose_name="Фактор", related_name="conditions", on_delete=models.CASCADE)
-    condition_class = models.CharField(max_length=250, verbose_name="Класс условий", choices=ConditionChoices.choices)
+    condition_class = models.CharField(max_length=250, verbose_name="Класс условий труда", choices=ConditionChoices.choices)
     is_need_prev_medical = models.BooleanField(default=False, verbose_name="Необходим предварительный медосмотр")
     medical_period = models.SmallIntegerField(verbose_name="Периодичность медосмотров",
                                               choices=PeriodChoices.choices, blank=True, null=True)
