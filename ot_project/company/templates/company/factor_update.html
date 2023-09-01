@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+    <h2>{{ factor | capfirst }}</h2>
+     {% if company %}
+        <form method="post" class="form">
+            {% csrf_token %}
+            {% bootstrap_form form layout='horizontal' %}
+            {% for formset in inlines %}
+            <hr>
+            {% bootstrap_formset formset layout='horizontal' %}
+            {% endfor %}
+        {% bootstrap_button button_type="submit" content="Сохранить" %}
+        <a class="btn btn-primary" href="{% url 'company' %}" role="button">Отмена</a>
+        </form>
+    {% else %}
+        {% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
+    {% endif %}
+{% endblock %}

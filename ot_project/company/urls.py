@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import CompanyDetailView, CompanyUpdateView, DepartmentDetailView, CompanyDepartmentsSetUpdateView, \
     CompanyDangerousWorksSetUpdateView, DangerousWorkDetailView, MedicWorkDetailView, CompanyMedicWorksSetUpdateView, \
-    FactorDetailView
+    FactorDetailView, FactorCreateView, FactorUpdateView, FactorDeleteView
 
 urlpatterns = [
     path('', CompanyDetailView.as_view(), name='company'),
@@ -13,4 +13,7 @@ urlpatterns = [
     path('medic-work/<int:medic_work_id>/', MedicWorkDetailView.as_view(), name='medic_work_detail'),
     path('medic-works/update/', CompanyMedicWorksSetUpdateView.as_view(), name='medic_works_update'),
     path('factor/<int:factor_id>/', FactorDetailView.as_view(), name='factor_detail'),
+    path('factor/create/', FactorCreateView.as_view(), name='factor_create'),
+    path('factor/<int:factor_id>/update', FactorUpdateView.as_view(), name='factor_update'),
+    path('factor/<int:factor_id>/delete', FactorDeleteView.as_view(), name='factor_delete'),
 ]

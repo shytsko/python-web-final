@@ -43,7 +43,7 @@ class Department(models.Model):
     name - наименование структурного подразделения
     head - руководитель структурного подразделения
     """
-    company = models.ForeignKey("Company", related_name="departments", on_delete=models.PROTECT)
+    company = models.ForeignKey("Company", related_name="departments", on_delete=models.PROTECT, editable=False)
     name = models.CharField(verbose_name="Название", max_length=100, )
 
     # head = models.ForeignKey("employee.Employee", null=True, default=None, related_name="+", on_delete=models.SET_NULL)
@@ -65,13 +65,14 @@ class Department(models.Model):
 
 
 class DangerousWork(models.Model):
-    company = models.ForeignKey("Company", related_name="dangerous_works", on_delete=models.PROTECT)
-    name = models.CharField(verbose_name="Название", max_length=250, unique=True)
+    company = models.ForeignKey("Company", related_name="dangerous_works", on_delete=models.PROTECT, editable=False)
+    name = models.CharField(verbose_name="Название", max_length=250)
 
     class Meta:
         ordering = ["name"]
         verbose_name = "Опасная работа"
         verbose_name_plural = "Опасные работы"
+        unique_together = ('company', 'name')
 
     def __str__(self):
         return f"{self.name}"
@@ -84,7 +85,7 @@ class DangerousWork(models.Model):
 
 
 class MedicWork(models.Model):
-    company = models.ForeignKey("Company", related_name="medic_works", on_delete=models.PROTECT)
+    company = models.ForeignKey("Company", related_name="medic_works", on_delete=models.PROTECT, editable=False)
     name = models.CharField(verbose_name="Название", max_length=250, unique=True)
     punct = models.CharField(verbose_name="Пункт приложения", max_length=10)
 
@@ -92,6 +93,7 @@ class MedicWork(models.Model):
         ordering = ["name"]
         verbose_name = "Работа, требующая медосмотра"
         verbose_name_plural = "Работы, требующие медосмотров"
+        unique_together = ('company', 'name')
 
     def __str__(self):
         return f"{self.name}"
@@ -119,7 +121,7 @@ class Factor(models.Model):
         CLASS_3 = 3, "3"
         CLASS_4 = 4, "4"
 
-    company = models.ForeignKey("Company", related_name="factors", on_delete=models.PROTECT)
+    company = models.ForeignKey("Company", related_name="factors", on_delete=models.PROTECT, editable=False)
     group = models.PositiveSmallIntegerField(verbose_name="Группа", choices=GroupChoices.choices)
     name = models.CharField(verbose_name="Название", max_length=250, unique=True)
     punct = models.CharField(verbose_name="Пункт приложения", max_length=10)
@@ -151,6 +153,7 @@ class Factor(models.Model):
         ordering = ["name"]
         verbose_name = "Вредный или опасный производственный фактор"
         verbose_name_plural = "Вредные и опасные производственные факторы"
+        unique_together = ('company', 'name')
 
     def get_absolute_url(self):
         return reverse_lazy("factor_detail", kwargs={"factor_id": self.pk})
@@ -174,8 +177,10 @@ class FactorCondition(models.Model):
         CONDITION_3_4 = "3.4", "3.4"
         CONDITION_4 = "4", "4"
 
-    factor = models.ForeignKey("Factor", verbose_name="Фактор", related_name="conditions", on_delete=models.CASCADE)
-    condition_class = models.CharField(max_length=250, verbose_name="Класс условий труда", choices=ConditionChoices.choices)
+    factor = models.ForeignKey("Factor", verbose_name="Фактор", editable=False, related_name="conditions",
+                               on_delete=models.CASCADE)
+    condition_class = models.CharField(max_length=250, verbose_name="Класс условий труда",
+                                       choices=ConditionChoices.choices)
     is_need_prev_medical = models.BooleanField(default=False, verbose_name="Необходим предварительный медосмотр")
     medical_period = models.SmallIntegerField(verbose_name="Периодичность медосмотров",
                                               choices=PeriodChoices.choices, blank=True, null=True)

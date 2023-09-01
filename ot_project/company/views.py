@@ -1,10 +1,10 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
-from django.views.generic import DetailView, UpdateView
+from django.views.generic import DetailView, UpdateView, CreateView, DeleteView
 from extra_views import InlineFormSetFactory, UpdateWithInlinesView, InlineFormSetView
 from .models import Company, Department, DangerousWork, MedicWork, Factor, FactorCondition
-from .forms import CompanyHiddenForm
+from .forms import CompanyHiddenForm, FactorCreateForm
 
 
 class CompanyDetailView(LoginRequiredMixin, DetailView):
@@ -166,3 +166,76 @@ class FactorDetailView(LoginRequiredMixin, DetailView):
         context['company'] = self.request.user.company
         context['title'] = self.object.name
         return context
+
+
+class FactorCreateView(LoginRequiredMixin, CreateView):
+    form_class = FactorCreateForm
+    template_name = 'company/factor_create.html'
+
+    def get_initial(self):
+        return {'company': self.request.user.company}
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['company'] = self.request.user.company
+        context['title'] = 'Новый производственный фактор'
+        return context
+
+    def get_success_url(self):
+        return reverse_lazy('factor_update', kwargs={'factor_id': self.object.pk})
+
+    def form_valid(self, form):
+        form.instance.company = self.request.user.company
+        return super(FactorCreateView, self).form_valid(form)
+
+
+class FactorConditionInline(InlineFormSetFactory):
+    model = FactorCondition
+    fields = '__all__'
+    factory_kwargs = {
+        'extra': 0,
+        'can_delete': False,
+        'max_num': 0,
+    }
+
+
+class FactorUpdateView(LoginRequiredMixin, UpdateWithInlinesView):
+    model = Factor
+    context_object_name = 'factor'
+    pk_url_kwarg = 'factor_id'
+    inlines = (FactorConditionInline,)
+    fields = '__all__'
+    success_url = reverse_lazy('company')
+    template_name = 'company/factor_update.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['company'] = self.request.user.company
+        context['title'] = 'Производственный фактор'
+        return context
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        if self.request.user.company != obj.get_owner_company():
+            raise PermissionDenied(f"Объект не принадлежит не принадлежит организации пользователя")
+        return obj
+
+
+class FactorDeleteView(LoginRequiredMixin, DeleteView):
+    model = Factor
+    success_url = reverse_lazy('company')
+    template_name = 'company/factor_delete_confirm.html'
+    pk_url_kwarg = 'factor_id'
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        if self.request.user.company != obj.get_owner_company():
+            raise PermissionDenied(f"Объект не принадлежит не принадлежит организации пользователя")
+        return obj
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['company'] = self.request.user.company
+        context['title'] = 'Удалить фактор'
+        return context
+
