@@ -86,7 +86,7 @@ class DangerousWork(models.Model):
 
 class MedicWork(models.Model):
     company = models.ForeignKey("Company", related_name="medic_works", on_delete=models.PROTECT, editable=False)
-    name = models.CharField(verbose_name="Название", max_length=250, unique=True)
+    name = models.CharField(verbose_name="Название", max_length=250)
     punct = models.CharField(verbose_name="Пункт приложения", max_length=10)
 
     class Meta:

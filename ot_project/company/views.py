@@ -100,7 +100,7 @@ class DepartmentDetailView(LoginRequiredMixin, DetailView):
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
         if self.request.user.company != obj.get_owner_company():
-            raise PermissionDenied(f"Структурное подразделение не принадлежит организации пользователя")
+            raise PermissionDenied(f"Структурное подразделение организации пользователя")
         return obj
 
     def get_context_data(self, **kwargs):
@@ -119,7 +119,7 @@ class DangerousWorkDetailView(LoginRequiredMixin, DetailView):
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
         if self.request.user.company != obj.get_owner_company():
-            raise PermissionDenied(f"Объект не принадлежит не принадлежит организации пользователя")
+            raise PermissionDenied(f"Объект не принадлежит организации пользователя")
         return obj
 
     def get_context_data(self, **kwargs):
@@ -138,7 +138,7 @@ class MedicWorkDetailView(LoginRequiredMixin, DetailView):
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
         if self.request.user.company != obj.get_owner_company():
-            raise PermissionDenied(f"Объект не принадлежит не принадлежит организации пользователя")
+            raise PermissionDenied(f"Объект не принадлежит организации пользователя")
         return obj
 
     def get_context_data(self, **kwargs):
@@ -157,7 +157,7 @@ class FactorDetailView(LoginRequiredMixin, DetailView):
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
         if self.request.user.company != obj.get_owner_company():
-            raise PermissionDenied(f"Объект не принадлежит не принадлежит организации пользователя")
+            raise PermissionDenied(f"Объект не принадлежит организации пользователя")
         return obj
 
     def get_context_data(self, **kwargs):
@@ -217,7 +217,7 @@ class FactorUpdateView(LoginRequiredMixin, UpdateWithInlinesView):
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
         if self.request.user.company != obj.get_owner_company():
-            raise PermissionDenied(f"Объект не принадлежит не принадлежит организации пользователя")
+            raise PermissionDenied(f"Объект не принадлежит организации пользователя")
         return obj
 
 
@@ -230,7 +230,7 @@ class FactorDeleteView(LoginRequiredMixin, DeleteView):
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
         if self.request.user.company != obj.get_owner_company():
-            raise PermissionDenied(f"Объект не принадлежит не принадлежит организации пользователя")
+            raise PermissionDenied(f"Объект не принадлежит организации пользователя")
         return obj
 
     def get_context_data(self, **kwargs):
@@ -238,4 +238,3 @@ class FactorDeleteView(LoginRequiredMixin, DeleteView):
         context['company'] = self.request.user.company
         context['title'] = 'Удалить фактор'
         return context
-
