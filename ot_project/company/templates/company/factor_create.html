@@ -3,7 +3,6 @@
 
 {% block content %}
 <h2>Новый производственный фактор</h2>
-{% if company %}
 <form method="post" class="form">
     {% csrf_token %}
     {% bootstrap_form form layout='horizontal' %}
@@ -11,7 +10,4 @@
     {% bootstrap_button button_type="submit" content="Сохранить" %}
     <a class="btn btn-primary" href="{% url 'company' %}" role="button">Отмена</a>
 </form>
-{% else %}
-{% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
-{% endif %}
 {% endblock %}

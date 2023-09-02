@@ -41,6 +41,7 @@
 
 <hr>
 <h4>Структуртные подразделения организации</h4>
+<p><a name="departments"></a></p>
 <div class="list-group">
     {% for department in departments %}
     <a href="{{ department.get_absolute_url }}" class="list-group-item list-group-item-action">{{ department }}</a>
@@ -49,7 +50,8 @@
 <a class="btn btn-primary mt-3" href="{% url 'departments_update' %}" role="button">Редактировать</a>
 
 <hr>
-<h4>Работы с повышенной опаснстью</h4>
+<h4>Работы с повышенной опасностью</h4>
+<p><a name="dangerous-works"></a></p>
 <div class="list-group">
     {% for work in dangerous_works %}
     <a href="{{ work.get_absolute_url }}" class="list-group-item list-group-item-action">{{ work }}</a>
@@ -59,6 +61,7 @@
 
 <hr>
 <h4>Работы, при выполнении которых есть необходимость в профессиональном отборе</h4>
+<p><a name="medic-works"></a></p>
 <div class="list-group">
     {% for work in medic_works %}
     <a href="{{ work.get_absolute_url }}" class="list-group-item list-group-item-action">{{ work }}</a>
@@ -68,6 +71,7 @@
 
 <hr>
 <h4>Вредные и опасные производственные факторы</h4>
+<p><a name="factors"></a></p>
 <div class="list-group">
     {% for factor in factors %}
     <a href="{{ factor.get_absolute_url }}" class="list-group-item list-group-item-action">{{ factor }}</a>

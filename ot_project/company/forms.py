@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
-from django.forms import ModelForm, HiddenInput
-from .models import Company, Factor
+from django.forms import ModelForm, HiddenInput, TextInput
+from .models import Company, Factor, FactorCondition
 
 
 class CompanyHiddenForm(ModelForm):
@@ -24,3 +24,10 @@ class FactorCreateForm(ModelForm):
                 danger_class == Factor.DangerClassChoices.NOT_APPLY):
             raise ValidationError("Для фактора должен быть установлен класс опасности")
         return danger_class
+
+
+class FactorConditionInlineForm(ModelForm):
+    class Meta:
+        model = FactorCondition
+        exclude = ('factor',),
+        widgets = {'condition_class': TextInput(attrs={'readonly': 'readonly'})}
