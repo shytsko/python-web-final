@@ -113,10 +113,6 @@ DATABASES = {
 pip install Django psycopg2
 ```
 
-# Создаем базовый шаблон
-
-Базовый шаблон будет содержать элементы интерфейса, общие для всех представлений
-
 ### Настраиваем каталог с общими шаблонами
 
 Создаем каталог в корневом каталоге проекта
@@ -137,7 +133,7 @@ TEMPLATES = [
 ]
 ```
 
-### Настраиваем каталог для статических файлов, не относящихся к конкретному приложению
+### Настраиваем каталог для статических файлов
 
 ```commandline
 mkdir templates
@@ -150,6 +146,20 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+```
+
+### Подключаем  Django Debug Toolbar
+
+```commandline
+pip install django-debug-toolbar
+```
+Прописываем параметры в файле _settings.py_.
+
+
+```python
+INTERNAL_IPS = ['127.0.0.1']
+
+
 ```
 
 ### Подключение bootstrap
@@ -165,7 +175,7 @@ STATICFILES_DIRS = [
 pip install django-bootstrap5
 ```
 
-Регистрируем приложение в файле _settings.py_.
+Добавляем необходимые настройки в файле _settings.py_.
 
 ```python
 INSTALLED_APPS = [
@@ -173,9 +183,27 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     ...
 ]
+
+INSTALLED_APPS = [
+    ...
+    'debug_toolbar',
+]
+
+MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    ...
+]
+```
+Добавляем маршруты в файле _urls.py_.
+```python
+urlpatterns = [
+    ...
+    path('__debug__/', include("debug_toolbar.urls")),
 ```
 
-### Создаем базовый шаблон
+# Создаем базовый шаблон
+
+Базовый шаблон будет содержать элементы интерфейса, общие для всех представлений
 
 Создаем базовый шаблон в файле _templates/base.html_
 Это не окончательный вариант шаблона. Пункты меню взяты для примера проверки работы на текущем этапе. Также имеются
@@ -333,7 +361,8 @@ INSTALLED_APPS = [
 выполнением первой миграции, поскольку в дальнейшем это позволит упростить внесение
 изменений, если понадобится.
 
-В файле _user/model.py_ добавляем модель
+В файле _user/model.py_ добавляем модель User, унаследованную от стандартного класса AbstractUser.
+Пока стандартную модель не расширяем. В дальнейшем, при необходимости, модель может быть дополнена.
 
 ```python
 from django.contrib.auth.models import AbstractUser
@@ -379,8 +408,7 @@ python manage.py createsuperuser --username=admin --email=admin@mail.com
 
 Django содержит готовые представления и формы для управления пользователями. В файле `django.contrib.auth.urls`
 содержиться список _urlpatterns_ с маршрутами и представлениями. Поскольку в разрабатываемом приложении не
-предполагается
-самомтоятельная регистрация пользователей, готовый список избыточен. Скопируем его в свой файл
+предполагается самостоятельная регистрация пользователей, готовый список избыточен. Скопируем его в свой файл
 _user/urls.py_ и оставим только маршруты для входа и выхода
 
 ```python
@@ -393,7 +421,10 @@ urlpatterns = [
 ]
 ```
 
-### Добавляем параметры в файл _settings.by_ для перенаправления на главную страницу после входа или выхода, а также URL, на который пользователь будет перенаправляться для аутентификации
+### Добавляем параметры в файл
+
+В файле _settings.by_ для перенаправления на главную страницу после входа или выхода, а также URL,
+на который пользователь будет перенаправляться для аутентификации
 
 ```python
 LOGIN_REDIRECT_URL = reverse_lazy('home')
@@ -435,7 +466,9 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Company(models.Model):
-from django.core.validators import RegexValidator
+    from django.core.validators import RegexValidator
+
+
 from django.db import models
 
 
@@ -532,8 +565,10 @@ python manage.py migrate
 ```
 
 ### Внесем изменения в настройки панели администратора
+
 Создадим пользовательскую модель интерфейса администратора и изменим регистрацию модели User в файле.
 Файл _user/admin.py_
+
 ```python
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
@@ -578,6 +613,7 @@ class CustomUserAdmin(UserAdmin):
 ```
 
 ### Добавим классы форм в файле _company/forms.py_
+
 ```python
 from django.forms import ModelForm, inlineformset_factory
 from .models import Company, Department
@@ -593,6 +629,7 @@ DepartmentsFormSet = inlineformset_factory(Company, Department, fields=('name',)
 ```
 
 ### Добавим представление форм в файле _company/views.py_
+
 ```python
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
@@ -619,30 +656,32 @@ def company_view(request):
     return render(request, 'company/company.html', context)
 ```
 
-###  Создаем шаблон _company/templates/company/company.html_
+### Создаем шаблон _company/templates/company/company.html_
+
 ```html
 {% extends "base.html" %}
 {% load django_bootstrap5 %}
 
 {% block content %}
-    <h2>Организация</h2>
-    {% if company %}
-        <form method="post" class="form">
-        {% csrf_token %}
-        {% bootstrap_form form %}
-        <hr>
-        <h4>Структуртные подразделения организации</h4>
-        {% bootstrap_formset formset layout='horizontal' %}
+<h2>Организация</h2>
+{% if company %}
+<form method="post" class="form">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    <hr>
+    <h4>Структуртные подразделения организации</h4>
+    {% bootstrap_formset formset layout='horizontal' %}
 
-        {% bootstrap_button button_type="submit" content="Сохранить" %}
-        </form>
-    {% else %}
-        {% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
-    {% endif %}
+    {% bootstrap_button button_type="submit" content="Сохранить" %}
+</form>
+{% else %}
+{% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
+{% endif %}
 {% endblock %}
 ```
 
-###  Создаем URL для представления в файле  _company/urls.py_ 
+### Создаем URL для представления в файле  _company/urls.py_
+
 ```python
 from django.urls import path
 from .views import company_view
@@ -746,8 +785,10 @@ python manage.py migrate
 ```
 
 ### Внесем изменения в настройки панели администратора
+
 Создадим пользовательскую модель интерфейса администратора и изменим регистрацию модели User в файле.
 Файл _user/admin.py_
+
 ```python
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin

@@ -1,5 +1,4 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, UpdateView, CreateView, DeleteView
 from extra_views import InlineFormSetFactory, UpdateWithInlinesView, InlineFormSetView
@@ -8,6 +7,11 @@ from .forms import CompanyHiddenForm, FactorCreateForm, FactorConditionInlineFor
 
 
 class CompanyOwnerTestMixin(UserPassesTestMixin):
+    """
+    Миксин для проверки, связан ли объект с организацией текущего пользователя.
+    Объект должен реализовывать метод get_owner_company, который должен вернуть объект типа company.models.Company
+    """
+
     permission_denied_message = "Объект не принадлежит организации пользователя"
 
     def test_func(self):
@@ -16,21 +20,25 @@ class CompanyOwnerTestMixin(UserPassesTestMixin):
 
 
 class ContextExMixin:
+    """
+    Миксин для объединения часто используемых параметров шаблона
+    title - Заголовок страницы, по умолчанию - название организации текущего пользователя
+    cancel_url - url для перехода по кнопке "Отмена", по умолчанию - страница организации текущего пользователя
+    """
     title = ''
     cancel_url = reverse_lazy('company')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = self.title
-        context['cancel_url'] = self.cancel_url
         context['company'] = self.request.user.company
+        context['title'] = context['company'].name + self.title
+        context['cancel_url'] = self.cancel_url
         return context
 
 
 class CompanyDetailView(LoginRequiredMixin, ContextExMixin, DetailView):
     context_object_name = 'company'
     template_name = 'company/company_detail.html'
-    title = 'Организация'
 
     def get_object(self, queryset=None):
         return self.request.user.company
@@ -50,13 +58,15 @@ class CompanyUpdateView(LoginRequiredMixin, ContextExMixin, UpdateView):
     fields = '__all__'
     template_name = 'company/company_update.html'
     success_url = reverse_lazy('company')
-    title = 'Организация'
 
     def get_object(self, queryset=None):
         return self.request.user.company
 
 
-class CompanyInlinesSetUpdateView(UpdateWithInlinesView):
+class CompanyInlinesSetUpdateBaseView(UpdateWithInlinesView):
+    """
+    Базовое представление для редактирования списков объектов, связанных с организацией
+    """
     model = Company
     form_class = CompanyHiddenForm
     context_object_name = 'company'
@@ -81,22 +91,19 @@ class MedicWorksInline(InlineFormSetFactory):
     fields = '__all__'
 
 
-class CompanyDepartmentsSetUpdateView(LoginRequiredMixin, ContextExMixin, CompanyInlinesSetUpdateView):
+class CompanyDepartmentsSetUpdateView(LoginRequiredMixin, ContextExMixin, CompanyInlinesSetUpdateBaseView):
     inlines = (DepartmentInline,)
     template_name = 'company/departments_update.html'
-    title = 'Структурные подразделения'
 
 
-class CompanyDangerousWorksSetUpdateView(LoginRequiredMixin, ContextExMixin, CompanyInlinesSetUpdateView):
+class CompanyDangerousWorksSetUpdateView(LoginRequiredMixin, ContextExMixin, CompanyInlinesSetUpdateBaseView):
     inlines = (DangerousWorksInline,)
     template_name = 'company/dangerous_works_update.html'
-    title = 'Работы с повышенной опасность'
 
 
-class CompanyMedicWorksSetUpdateView(LoginRequiredMixin, ContextExMixin, CompanyInlinesSetUpdateView):
+class CompanyMedicWorksSetUpdateView(LoginRequiredMixin, ContextExMixin, CompanyInlinesSetUpdateBaseView):
     inlines = (MedicWorksInline,)
     template_name = 'company/medic_works_update.html'
-    title = 'Работы, при выполнении которых есть необходимость в профессиональном отборе'
 
 
 class DepartmentDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DetailView):
@@ -105,11 +112,6 @@ class DepartmentDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExM
     template_name = 'company/department_detail.html'
     pk_url_kwarg = 'depatrment_id'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = self.object.name
-        return context
-
 
 class DangerousWorkDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DetailView):
     model = DangerousWork
@@ -117,22 +119,12 @@ class DangerousWorkDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, Context
     template_name = 'company/dangerous_work_detail.html'
     pk_url_kwarg = 'dangerous_work_id'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = self.object.name
-        return context
-
 
 class MedicWorkDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DetailView):
     model = MedicWork
     context_object_name = 'work'
     template_name = 'company/medic_work_detail.html'
     pk_url_kwarg = 'medic_work_id'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = self.object.name
-        return context
 
 
 class FactorDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DetailView):
@@ -144,14 +136,12 @@ class FactorDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['conditions'] = self.object.conditions.all()
-        context['title'] = self.object.name
         return context
 
 
 class FactorCreateView(LoginRequiredMixin, ContextExMixin, CreateView):
     form_class = FactorCreateForm
     template_name = 'company/factor_create.html'
-    title = 'Новый производственный фактор'
 
     def get_initial(self):
         return {'company': self.request.user.company}
@@ -183,7 +173,6 @@ class FactorUpdateView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin
     fields = '__all__'
     success_url = reverse_lazy('company')
     template_name = 'company/factor_update.html'
-    title = 'Производственный фактор'
 
 
 class FactorDeleteView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DeleteView):
@@ -191,4 +180,3 @@ class FactorDeleteView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin
     success_url = reverse_lazy('company')
     template_name = 'company/factor_delete_confirm.html'
     pk_url_kwarg = 'factor_id'
-    title = 'Удалить фактор'
