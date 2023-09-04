@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, UpdateView, CreateView, DeleteView
 from extra_views import InlineFormSetFactory, UpdateWithInlinesView, InlineFormSetView
@@ -6,17 +7,17 @@ from .models import Company, Department, DangerousWork, MedicWork, Factor, Facto
 from .forms import CompanyHiddenForm, FactorCreateForm, FactorConditionInlineForm
 
 
-class CompanyOwnerTestMixin(UserPassesTestMixin):
+class CompanyOwnerTestMixin:
     """
     Миксин для проверки, связан ли объект с организацией текущего пользователя.
-    Объект должен реализовывать метод get_owner_company, который должен вернуть объект типа company.models.Company
+    Класс объекта должен реализовывать метод get_owner_company_id, который возвращает id организации
     """
 
-    permission_denied_message = "Объект не принадлежит организации пользователя"
-
-    def test_func(self):
-        obj = self.get_object()
-        return self.request.user.company == obj.get_owner_company()
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        if self.request.user.company_id != obj.get_owner_company_id():
+            raise PermissionDenied(f"Объект не принадлежит организации пользователя")
+        return obj
 
 
 class ContextExMixin:
@@ -24,6 +25,7 @@ class ContextExMixin:
     Миксин для объединения часто используемых параметров шаблона
     title - Заголовок страницы, по умолчанию - название организации текущего пользователя
     cancel_url - url для перехода по кнопке "Отмена", по умолчанию - страница организации текущего пользователя
+    company - организация текущего пользователя
     """
     title = ''
     cancel_url = reverse_lazy('company')
@@ -110,7 +112,7 @@ class DepartmentDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExM
     model = Department
     context_object_name = 'department'
     template_name = 'company/department_detail.html'
-    pk_url_kwarg = 'depatrment_id'
+    pk_url_kwarg = 'department_id'
 
 
 class DangerousWorkDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DetailView):

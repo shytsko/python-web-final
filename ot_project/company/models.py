@@ -4,6 +4,39 @@ from django.db import models
 from django.urls import reverse_lazy
 
 
+class FactorGroupChoices(models.IntegerChoices):
+    CHEMICAL = 1, "Химические"
+    BIOLOGICAL = 2, "Биологические"
+    DUST = 3, "Пыли и аэрозоли"
+    PHYSICAL = 4, "Физические"
+    HEAVY = 5, "Тяжесть"
+    STRESSFUL = 6, "Напряженность"
+
+
+class DangerClassChoices(models.IntegerChoices):
+    NOT_APPLY = 0, "Не применяется"
+    CLASS_1 = 1, "1"
+    CLASS_2 = 2, "2"
+    CLASS_3 = 3, "3"
+    CLASS_4 = 4, "4"
+
+
+class MedicPeriodChoices(models.IntegerChoices):
+    YEAR_1 = 1, "1 год"
+    YEAR_2 = 2, "2 года"
+    YEAR_3 = 3, "3 года"
+    __empty__ = "Не требуется"
+
+
+class ConditionClassChoices(models.TextChoices):
+    CONDITION_2 = "2", "2"
+    CONDITION_3_1 = "3.1", "3.1"
+    CONDITION_3_2 = "3.2", "3.2"
+    CONDITION_3_3 = "3.3", "3.3"
+    CONDITION_3_4 = "3.4", "3.4"
+    CONDITION_4 = "4", "4"
+
+
 class Company(models.Model):
     """
     Данные организации
@@ -58,10 +91,10 @@ class Department(models.Model):
         return f"{self.name}"
 
     def get_absolute_url(self):
-        return reverse_lazy("department_detail", kwargs={"depatrment_id": self.pk})
+        return reverse_lazy("department_detail", kwargs={"department_id": self.pk})
 
-    def get_owner_company(self):
-        return self.company
+    def get_owner_company_id(self):
+        return self.company_id
 
 
 class DangerousWork(models.Model):
@@ -80,14 +113,16 @@ class DangerousWork(models.Model):
     def get_absolute_url(self):
         return reverse_lazy("dangerous_work_detail", kwargs={"dangerous_work_id": self.pk})
 
-    def get_owner_company(self):
-        return self.company
+    def get_owner_company_id(self):
+        return self.company_id
 
 
 class MedicWork(models.Model):
     company = models.ForeignKey("Company", related_name="medic_works", on_delete=models.PROTECT, editable=False)
     name = models.CharField(verbose_name="Название", max_length=250)
     punct = models.CharField(verbose_name="Пункт приложения", max_length=10)
+    medical_period = models.SmallIntegerField(verbose_name="Периодичность медосмотров",
+                                              choices=MedicPeriodChoices.choices)
 
     class Meta:
         ordering = ["name"]
@@ -101,28 +136,13 @@ class MedicWork(models.Model):
     def get_absolute_url(self):
         return reverse_lazy("medic_work_detail", kwargs={"medic_work_id": self.pk})
 
-    def get_owner_company(self):
-        return self.company
+    def get_owner_company_id(self):
+        return self.company_id
 
 
 class Factor(models.Model):
-    class GroupChoices(models.IntegerChoices):
-        CHEMICAL = 1, "Химические"
-        BIOLOGICAL = 2, "Биологические"
-        DUST = 3, "Пыли и аэрозоли"
-        PHYSICAL = 4, "Физические"
-        HEAVY = 5, "Тяжесть"
-        STRESSFUL = 6, "Напряженность"
-
-    class DangerClassChoices(models.IntegerChoices):
-        NOT_APPLY = 0, "Не применяется"
-        CLASS_1 = 1, "1"
-        CLASS_2 = 2, "2"
-        CLASS_3 = 3, "3"
-        CLASS_4 = 4, "4"
-
     company = models.ForeignKey("Company", related_name="factors", on_delete=models.PROTECT, editable=False)
-    group = models.PositiveSmallIntegerField(verbose_name="Группа", choices=GroupChoices.choices)
+    group = models.PositiveSmallIntegerField(verbose_name="Группа", choices=FactorGroupChoices.choices)
     name = models.CharField(verbose_name="Название", max_length=250, unique=True)
     punct = models.CharField(verbose_name="Пункт приложения", max_length=10)
     danger_class = models.PositiveSmallIntegerField(verbose_name="Класс опасности", choices=DangerClassChoices.choices,
@@ -158,32 +178,18 @@ class Factor(models.Model):
     def get_absolute_url(self):
         return reverse_lazy("factor_detail", kwargs={"factor_id": self.pk})
 
-    def get_owner_company(self):
-        return self.company
+    def get_owner_company_id(self):
+        return self.company_id
 
 
 class FactorCondition(models.Model):
-    class PeriodChoices(models.IntegerChoices):
-        YEAR_1 = 1, "1 год"
-        YEAR_2 = 2, "2 года"
-        YEAR_3 = 3, "3 года"
-        __empty__ = "Не требуется"
-
-    class ConditionChoices(models.TextChoices):
-        CONDITION_2 = "2", "2"
-        CONDITION_3_1 = "3.1", "3.1"
-        CONDITION_3_2 = "3.2", "3.2"
-        CONDITION_3_3 = "3.3", "3.3"
-        CONDITION_3_4 = "3.4", "3.4"
-        CONDITION_4 = "4", "4"
-
     factor = models.ForeignKey("Factor", verbose_name="Фактор", editable=False, related_name="conditions",
                                on_delete=models.CASCADE)
     condition_class = models.CharField(max_length=250, verbose_name="Класс условий труда",
-                                       choices=ConditionChoices.choices)
+                                       choices=ConditionClassChoices.choices)
     is_need_prev_medical = models.BooleanField(default=False, verbose_name="Необходим предварительный медосмотр")
     medical_period = models.SmallIntegerField(verbose_name="Периодичность медосмотров",
-                                              choices=PeriodChoices.choices, blank=True, null=True)
+                                              choices=MedicPeriodChoices.choices, blank=True, null=True)
 
     class Meta:
         ordering = ["factor"]
