@@ -185,14 +185,14 @@ class Factor(models.Model):
 class FactorCondition(models.Model):
     factor = models.ForeignKey("Factor", verbose_name="Фактор", editable=False, related_name="conditions",
                                on_delete=models.CASCADE)
-    condition_class = models.CharField(max_length=250, verbose_name="Класс условий труда",
+    condition_class = models.CharField(max_length=3, verbose_name="Класс условий труда",
                                        choices=ConditionClassChoices.choices)
     is_need_prev_medical = models.BooleanField(default=False, verbose_name="Необходим предварительный медосмотр")
     medical_period = models.SmallIntegerField(verbose_name="Периодичность медосмотров",
                                               choices=MedicPeriodChoices.choices, blank=True, null=True)
 
     class Meta:
-        ordering = ["factor"]
+        ordering = ['factor', 'condition_class']
         verbose_name = "Класс условий труда"
         verbose_name_plural = "Классы условий труда"
         unique_together = ('factor', 'condition_class')
