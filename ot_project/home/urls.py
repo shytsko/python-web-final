@@ -1,7 +1,6 @@
 from django.urls import path
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, RedirectView
 
 urlpatterns = [
-    path('', TemplateView.as_view(template_name='home/home.html',
-                                  extra_context={"title": "Главная"}), name='home'),
+    path('', RedirectView.as_view(pattern_name='company'), name='home'),
 ]
