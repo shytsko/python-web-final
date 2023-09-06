@@ -77,7 +77,7 @@ class Department(models.Model):
     head - руководитель структурного подразделения
     """
     company = models.ForeignKey("Company", related_name="departments", on_delete=models.PROTECT, editable=False)
-    name = models.CharField(verbose_name="Название", max_length=100, )
+    name = models.CharField(verbose_name="Название", max_length=100)
 
     # head = models.ForeignKey("employee.Employee", null=True, default=None, related_name="+", on_delete=models.SET_NULL)
 
@@ -196,3 +196,23 @@ class FactorCondition(models.Model):
         verbose_name = "Класс условий труда"
         verbose_name_plural = "Классы условий труда"
         unique_together = ('factor', 'condition_class')
+
+
+class Workplace(models.Model):
+    department = models.ForeignKey("Department", related_name="workplaces", on_delete=models.PROTECT, editable=False)
+    name = models.CharField(verbose_name="Название", max_length=100)
+    extra_description = models.CharField(verbose_name="Дополнительное описание", max_length=100)
+    code = models.CharField(verbose_name="Код должности/профессии", max_length=8,
+                            validators=[RegexValidator(regex=r'^\d{4}-\d{3}$',
+                                                       message="Код должен соответствовать шаблону XXXX-XXX (X - число)")
+                                        ])
+    is_office_worker = models.BooleanField(default=False, verbose_name="Должность служащего", editable=False)
+    factors = models.ManyToManyField('Factor', through='WorkplaceFactor')
+
+
+class WorkplaceFactor(models.Model):
+    workplace = models.ForeignKey('Workplace', on_delete=models.CASCADE)
+    factor = models.ForeignKey('Factor', on_delete=models.CASCADE)
+    condition_class = models.CharField(max_length=3, verbose_name="Класс условий труда",
+                                       choices=ConditionClassChoices.choices)
+
