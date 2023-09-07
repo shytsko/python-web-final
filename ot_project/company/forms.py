@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm, HiddenInput, TextInput
-from .models import Company, Factor, FactorCondition
+from .models import Company, Factor, FactorCondition, FactorGroupChoices, DangerClassChoices
 
 
 class CompanyHiddenForm(ModelForm):
@@ -20,8 +20,8 @@ class FactorCreateForm(ModelForm):
         group = self.cleaned_data['group']
         danger_class = self.cleaned_data['danger_class']
 
-        if (group in {Factor.GroupChoices.CHEMICAL, Factor.GroupChoices.BIOLOGICAL, Factor.GroupChoices.DUST} and
-                danger_class == Factor.DangerClassChoices.NOT_APPLY):
+        if (group in {FactorGroupChoices.CHEMICAL, FactorGroupChoices.BIOLOGICAL, FactorGroupChoices.DUST} and
+                danger_class == DangerClassChoices.NOT_APPLY):
             raise ValidationError("Для фактора должен быть установлен класс опасности")
         return danger_class
 

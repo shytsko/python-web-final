@@ -154,11 +154,11 @@ class Factor(models.Model):
         return f"{self.name}"
 
     def clean(self):
-        if self.group in {self.GroupChoices.CHEMICAL, self.GroupChoices.BIOLOGICAL, self.GroupChoices.DUST}:
-            if self.danger_class == self.DangerClassChoices.NOT_APPLY:
+        if self.group in {FactorGroupChoices.CHEMICAL, FactorGroupChoices.BIOLOGICAL, FactorGroupChoices.DUST}:
+            if self.danger_class == DangerClassChoices.NOT_APPLY:
                 raise ValidationError("Для фактора должен быть установлен класс опасности")
         else:
-            self.danger_class = self.DangerClassChoices.NOT_APPLY
+            self.danger_class = DangerClassChoices.NOT_APPLY
             self.is_allergen = False
             self.is_carcinogen = False
 
@@ -166,7 +166,7 @@ class Factor(models.Model):
         pre_save_pk = self.pk
         super().save(*args, **kwargs)
         if not pre_save_pk:
-            for condition_class in FactorCondition.ConditionChoices.values:
+            for condition_class in ConditionClassChoices.values:
                 FactorCondition.objects.create(factor=self, condition_class=condition_class)
 
     class Meta:
@@ -199,7 +199,7 @@ class FactorCondition(models.Model):
 
 
 class Workplace(models.Model):
-    department = models.ForeignKey("Department", related_name="workplaces", on_delete=models.PROTECT, editable=False)
+    department = models.ForeignKey("Department", related_name="workplaces", on_delete=models.PROTECT)
     name = models.CharField(verbose_name="Название", max_length=100)
     extra_description = models.CharField(verbose_name="Дополнительное описание", max_length=100)
     code = models.CharField(verbose_name="Код должности/профессии", max_length=8,
