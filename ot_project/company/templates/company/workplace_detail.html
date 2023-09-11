@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+
+{% if company %}
+<h2>Рабочее место</h2>
+<h3>{{ workplace }}</h3>
+<hr>
+<h4>Вредные и опасные факторы</h4>
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Вредный или опасный фактор</th>
+      <th scope="col">Класс условий труда</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for factor in factors %}
+    <tr>
+      <td>{{ factor.factor.name }}</td>
+      <td>{{ factor.condition_class }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<hr>
+<h4>Работы с повышенной опасностью</h4>
+<div class="list-group">
+    {% for works in dangerous_works %}
+    <a href="{{ works.get_absolute_url }}" class="list-group-item list-group-item-action">{{ works }}</a>
+    {% endfor %}
+</div>
+
+<hr>
+<h4>Работы, при выполнении которых есть необходимость в профессиональном отборе</h4>
+<div class="list-group">
+    {% for work in medic_works %}
+    <a href="{{ work.get_absolute_url }}" class="list-group-item list-group-item-action">{{ work }}</a>
+    {% endfor %}
+</div>
+
+<hr>
+<a class="btn btn-primary mt-3" href="{% url 'workplace_update' workplace.pk %}" role="button">Редактировать</a>
+{% else %}
+{% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
+{% endif %}
+
+{% endblock %}

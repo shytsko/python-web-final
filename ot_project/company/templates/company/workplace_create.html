@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+<h2>Новое рабочее место в структорном подразделении {{ department }}</h2>
+<form method="post" class="form">
+    {% csrf_token %}
+    {% bootstrap_form form layout='horizontal' %}
+
+    {% bootstrap_button button_type="submit" content="Сохранить" %}
+    <a class="btn btn-primary" href="{{ cancel_url }}" role="button">Отмена</a>
+</form>
+{% endblock %}

@@ -199,20 +199,63 @@ class FactorCondition(models.Model):
 
 
 class Workplace(models.Model):
-    department = models.ForeignKey("Department", related_name="workplaces", on_delete=models.PROTECT)
+    department = models.ForeignKey("Department", related_name="workplaces", on_delete=models.PROTECT, editable=False)
     name = models.CharField(verbose_name="Название", max_length=100)
-    extra_description = models.CharField(verbose_name="Дополнительное описание", max_length=100)
+    extra_description = models.CharField(verbose_name="Дополнительное описание", max_length=100, null=True, blank=True)
     code = models.CharField(verbose_name="Код должности/профессии", max_length=8,
                             validators=[RegexValidator(regex=r'^\d{4}-\d{3}$',
                                                        message="Код должен соответствовать шаблону XXXX-XXX (X - число)")
                                         ])
     is_office_worker = models.BooleanField(default=False, verbose_name="Должность служащего", editable=False)
-    factors = models.ManyToManyField('Factor', through='WorkplaceFactor')
+    factors = models.ManyToManyField('Factor', through='WorkplaceFactor',
+                                     verbose_name="Вредные и опасные производственные факторы")
+    dangerous_works = models.ManyToManyField(DangerousWork, verbose_name="Работы с повышенной опасностью", blank=True)
+    medic_works = models.ManyToManyField(MedicWork, verbose_name="Работы, требующие медосмотров", blank=True)
+    is_need_internship = models.BooleanField(default=False, verbose_name="Требуется стажировка")
+    is_need_knowledge_test = models.BooleanField(default=False, verbose_name="Требуется проверка знаний")
+    knowledge_test_period = models.SmallIntegerField(verbose_name="Периодичность проверки знаний в месяцах",
+                                                     blank=True, null=True)
+
+    def get_absolute_url(self):
+        return reverse_lazy('workplace_detail', kwargs={'workplace_id': self.pk})
+
+    def get_owner_company_id(self):
+        return self.department.company_id
+
+    def clean(self):
+        self.is_office_worker = self.code[0] in '123'
+
+        if self.pk is not None:
+            if not self.is_office_worker:
+                if self.dangerous_works.count() > 0:
+                    self.is_need_internship = True
+                    self.is_need_knowledge_test = True
+                else:
+                    self.is_need_internship = False
+                    self.is_need_knowledge_test = False
+
+            if self.is_need_knowledge_test:
+                if not self.knowledge_test_period:
+                    self.knowledge_test_period = 36 if self.is_office_worker else 12
+            else:
+                self.knowledge_test_period = None
+
+    def __str__(self):
+        return f"{self.department.name} - {self.name}"
+
+    class Meta:
+        ordering = ['department', 'name']
+        verbose_name = "Рабочее место"
+        verbose_name_plural = "Рабочие места"
+        unique_together = ('department', 'name')
 
 
 class WorkplaceFactor(models.Model):
     workplace = models.ForeignKey('Workplace', on_delete=models.CASCADE)
-    factor = models.ForeignKey('Factor', on_delete=models.CASCADE)
+    factor = models.ForeignKey('Factor', on_delete=models.CASCADE, verbose_name="Фактор", )
     condition_class = models.CharField(max_length=3, verbose_name="Класс условий труда",
                                        choices=ConditionClassChoices.choices)
 
+    class Meta:
+        ordering = ['factor__name', ]
+        unique_together = ('workplace_id', 'factor_id')
