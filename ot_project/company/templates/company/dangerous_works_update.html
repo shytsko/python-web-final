@@ -3,7 +3,6 @@
 
 {% block content %}
     <h2>Работы с повышенной опасностью в организации {{ company.name }}</h2>
-     {% if company %}
         <form method="post" class="form">
             {{ form }}
             {% csrf_token %}
@@ -13,7 +12,4 @@
             {% bootstrap_button button_type="submit" content="Сохранить" %}
             <a class="btn btn-primary" href="{{ cancel_url }}" role="button">Отмена</a>
         </form>
-    {% else %}
-        {% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
-    {% endif %}
 {% endblock %}

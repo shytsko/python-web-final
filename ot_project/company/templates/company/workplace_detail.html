@@ -3,7 +3,6 @@
 
 {% block content %}
 
-{% if company %}
 <h2>Рабочее место</h2>
 <h3>{{ workplace }}</h3>
 <hr>
@@ -43,8 +42,5 @@
 <hr>
 <a class="btn btn-primary mt-3" href="{% url 'workplace_update' workplace.pk %}" role="button">Редактировать</a>
 <a class="btn btn-danger mt-3" href="{% url 'workplace_delete' workplace.pk %}" role="button">Удалить</a>
-{% else %}
-{% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
-{% endif %}
 
 {% endblock %}

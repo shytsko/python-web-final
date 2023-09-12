@@ -2,14 +2,10 @@
 {% load django_bootstrap5 %}
 
 {% block content %}
-{% if company %}
 <h2>Удалить {{ object }}?</h2>
 <form method="post">{% csrf_token %}
     {% bootstrap_form form layout='horizontal' %}
     {% bootstrap_button button_type="submit" content="Подтвердить" %}
     <a class="btn btn-primary" href="{{ cancel_url }}" role="button">Отмена</a>
 </form>
-{% else %}
-{% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
-{% endif %}
 {% endblock %}

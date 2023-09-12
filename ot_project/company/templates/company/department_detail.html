@@ -3,7 +3,6 @@
 
 {% block content %}
 
-{% if company %}
 <h2>Cведения о структурном подразделени</h2>
 <h3>{{ department }}</h3>
 
@@ -14,9 +13,5 @@
     {% endfor %}
 </div>
 <a class="btn btn-primary mt-3" href="{% url 'workplace_create' department.pk %}" role="button">Создать</a>
-
-{% else %}
-{% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
-{% endif %}
 
 {% endblock %}

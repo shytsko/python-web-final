@@ -3,12 +3,7 @@
 
 {% block content %}
 
-{% if company %}
 <h2>Работа с повышенной опасностью</h2>
 {{ work }}
-
-{% else %}
-{% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
-{% endif %}
 
 {% endblock %}
