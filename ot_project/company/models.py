@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 from django.urls import reverse_lazy
 
 
@@ -67,6 +69,9 @@ class Company(models.Model):
 
     def __str__(self):
         return f"({self.unp}) {self.name}"
+
+    def get_absolute_url(self):
+        return reverse_lazy('company')
 
 
 class Department(models.Model):
@@ -224,13 +229,15 @@ class Workplace(models.Model):
 
     def clean(self):
         self.is_office_worker = self.code[0] in '123'
+        self.check_knowledge_test()
 
+    def check_knowledge_test(self):
         if self.pk is not None:
-            if not self.is_office_worker:
-                if self.dangerous_works.count() > 0:
-                    self.is_need_internship = True
-                    self.is_need_knowledge_test = True
-                else:
+            if self.dangerous_works.count() > 0:
+                self.is_need_internship = True
+                self.is_need_knowledge_test = True
+            else:
+                if not self.is_office_worker:
                     self.is_need_internship = False
                     self.is_need_knowledge_test = False
 
@@ -248,6 +255,13 @@ class Workplace(models.Model):
         verbose_name = "Рабочее место"
         verbose_name_plural = "Рабочие места"
         unique_together = ('department', 'name')
+
+
+@receiver(m2m_changed, sender=Workplace.dangerous_works.through)
+def cart_update_total_when_item_added(sender, instance, action, *args, **kwargs):
+    if action == 'post_add' or action == 'post_remove':
+        instance.check_knowledge_test()
+        instance.save()
 
 
 class WorkplaceFactor(models.Model):

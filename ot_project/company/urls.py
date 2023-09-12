@@ -2,7 +2,7 @@ from django.urls import path
 from .views import CompanyDetailView, CompanyUpdateView, DepartmentDetailView, CompanyDepartmentsSetUpdateView, \
     CompanyDangerousWorksSetUpdateView, DangerousWorkDetailView, MedicWorkDetailView, CompanyMedicWorksSetUpdateView, \
     FactorDetailView, FactorCreateView, FactorUpdateView, FactorDeleteView, WorkplaceCreateView, WorkplaceDetailView, \
-    WorkplaceUpdateView
+    WorkplaceUpdateView, WorkplaceDeleteView
 
 urlpatterns = [
     path('', CompanyDetailView.as_view(), name='company'),
@@ -20,4 +20,5 @@ urlpatterns = [
     path('department/<int:department_id>/workplace/create', WorkplaceCreateView.as_view(), name='workplace_create'),
     path('workplace/<int:workplace_id>/', WorkplaceDetailView.as_view(), name='workplace_detail'),
     path('workplace/<int:workplace_id>/update', WorkplaceUpdateView.as_view(), name='workplace_update'),
+    path('workplace/<int:workplace_id>/delete', WorkplaceDeleteView.as_view(), name='workplace_delete'),
 ]

@@ -30,7 +30,7 @@ class ContextExMixin:
     company - организация текущего пользователя
     """
     title = ''
-    cancel_url = reverse_lazy('company')
+    cancel_url = None
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -40,7 +40,11 @@ class ContextExMixin:
         return context
 
     def get_cancel_url(self):
-        return self.cancel_url
+        if self.cancel_url:
+            return self.cancel_url
+        if self.object:
+            return self.object.get_absolute_url()
+        return reverse_lazy('company')
 
 
 class CompanyDetailView(LoginRequiredMixin, ContextExMixin, DetailView):
@@ -64,7 +68,6 @@ class CompanyUpdateView(LoginRequiredMixin, ContextExMixin, UpdateView):
     context_object_name = 'company'
     fields = '__all__'
     template_name = 'company/company_update.html'
-    success_url = reverse_lazy('company')
 
     def get_object(self, queryset=None):
         return self.request.user.company
@@ -77,7 +80,6 @@ class CompanyInlinesSetUpdateBaseView(UpdateWithInlinesView):
     model = Company
     form_class = CompanyHiddenForm
     context_object_name = 'company'
-    success_url = reverse_lazy('company')
 
     def get_object(self, queryset=None):
         return self.request.user.company
@@ -183,14 +185,13 @@ class FactorUpdateView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin
     pk_url_kwarg = 'factor_id'
     inlines = (FactorConditionInline,)
     fields = '__all__'
-    success_url = reverse_lazy('company')
     template_name = 'company/factor_update.html'
 
 
 class FactorDeleteView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DeleteView):
     model = Factor
     success_url = reverse_lazy('company')
-    template_name = 'company/factor_delete_confirm.html'
+    template_name = 'company/delete_confirm.html'
     pk_url_kwarg = 'factor_id'
 
 
@@ -248,12 +249,6 @@ class WorkplaceUpdateView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMi
     inlines_names = ('factors',)
     template_name = 'company/workplace_update.html'
 
-    def get_success_url_url(self):
-        return reverse_lazy('workplace_detail', kwargs={'workplace_id': self.kwargs['workplace_id']})
-
-    def get_cancel_url(self):
-        return reverse_lazy('workplace_detail', kwargs={'workplace_id': self.kwargs['workplace_id']})
-
     def get_form_class(self):
         form_class = super().get_form_class()
         form_class.company_id = self.request.user.company_id
@@ -269,3 +264,12 @@ class WorkplaceUpdateView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMi
             inline_formset = inline_instance.construct_formset()
             inline_formsets.append(inline_formset)
         return inline_formsets
+
+
+class WorkplaceDeleteView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DeleteView):
+    model = Workplace
+    template_name = 'company/delete_confirm.html'
+    pk_url_kwarg = 'workplace_id'
+
+    def get_success_url(self):
+        return self.object.department.get_absolute_url()
