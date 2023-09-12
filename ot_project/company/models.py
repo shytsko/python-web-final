@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 from django.urls import reverse_lazy
 
 
@@ -68,6 +70,9 @@ class Company(models.Model):
     def __str__(self):
         return f"({self.unp}) {self.name}"
 
+    def get_absolute_url(self):
+        return reverse_lazy('company')
+
 
 class Department(models.Model):
     """
@@ -77,7 +82,7 @@ class Department(models.Model):
     head - руководитель структурного подразделения
     """
     company = models.ForeignKey("Company", related_name="departments", on_delete=models.PROTECT, editable=False)
-    name = models.CharField(verbose_name="Название", max_length=100, )
+    name = models.CharField(verbose_name="Название", max_length=100)
 
     # head = models.ForeignKey("employee.Employee", null=True, default=None, related_name="+", on_delete=models.SET_NULL)
 
@@ -154,11 +159,11 @@ class Factor(models.Model):
         return f"{self.name}"
 
     def clean(self):
-        if self.group in {self.GroupChoices.CHEMICAL, self.GroupChoices.BIOLOGICAL, self.GroupChoices.DUST}:
-            if self.danger_class == self.DangerClassChoices.NOT_APPLY:
+        if self.group in {FactorGroupChoices.CHEMICAL, FactorGroupChoices.BIOLOGICAL, FactorGroupChoices.DUST}:
+            if self.danger_class == DangerClassChoices.NOT_APPLY:
                 raise ValidationError("Для фактора должен быть установлен класс опасности")
         else:
-            self.danger_class = self.DangerClassChoices.NOT_APPLY
+            self.danger_class = DangerClassChoices.NOT_APPLY
             self.is_allergen = False
             self.is_carcinogen = False
 
@@ -166,7 +171,7 @@ class Factor(models.Model):
         pre_save_pk = self.pk
         super().save(*args, **kwargs)
         if not pre_save_pk:
-            for condition_class in FactorCondition.ConditionChoices.values:
+            for condition_class in ConditionClassChoices.values:
                 FactorCondition.objects.create(factor=self, condition_class=condition_class)
 
     class Meta:
@@ -196,3 +201,75 @@ class FactorCondition(models.Model):
         verbose_name = "Класс условий труда"
         verbose_name_plural = "Классы условий труда"
         unique_together = ('factor', 'condition_class')
+
+
+class Workplace(models.Model):
+    department = models.ForeignKey("Department", related_name="workplaces", on_delete=models.PROTECT, editable=False)
+    name = models.CharField(verbose_name="Название", max_length=100)
+    extra_description = models.CharField(verbose_name="Дополнительное описание", max_length=100, null=True, blank=True)
+    code = models.CharField(verbose_name="Код должности/профессии", max_length=8,
+                            validators=[RegexValidator(regex=r'^\d{4}-\d{3}$',
+                                                       message="Код должен соответствовать шаблону XXXX-XXX (X - число)")
+                                        ])
+    is_office_worker = models.BooleanField(default=False, verbose_name="Должность служащего", editable=False)
+    factors = models.ManyToManyField('Factor', through='WorkplaceFactor',
+                                     verbose_name="Вредные и опасные производственные факторы")
+    dangerous_works = models.ManyToManyField(DangerousWork, verbose_name="Работы с повышенной опасностью", blank=True)
+    medic_works = models.ManyToManyField(MedicWork, verbose_name="Работы, требующие медосмотров", blank=True)
+    is_need_internship = models.BooleanField(default=False, verbose_name="Требуется стажировка")
+    is_need_knowledge_test = models.BooleanField(default=False, verbose_name="Требуется проверка знаний")
+    knowledge_test_period = models.SmallIntegerField(verbose_name="Периодичность проверки знаний в месяцах",
+                                                     blank=True, null=True)
+
+    def get_absolute_url(self):
+        return reverse_lazy('workplace_detail', kwargs={'workplace_id': self.pk})
+
+    def get_owner_company_id(self):
+        return self.department.company_id
+
+    def clean(self):
+        self.is_office_worker = self.code[0] in '123'
+        self.check_knowledge_test()
+
+    def check_knowledge_test(self):
+        if self.pk is not None:
+            if self.dangerous_works.count() > 0:
+                self.is_need_internship = True
+                self.is_need_knowledge_test = True
+            else:
+                if not self.is_office_worker:
+                    self.is_need_internship = False
+                    self.is_need_knowledge_test = False
+
+            if self.is_need_knowledge_test:
+                if not self.knowledge_test_period:
+                    self.knowledge_test_period = 36 if self.is_office_worker else 12
+            else:
+                self.knowledge_test_period = None
+
+    def __str__(self):
+        return f"{self.department.name} - {self.name}"
+
+    class Meta:
+        ordering = ['department', 'name']
+        verbose_name = "Рабочее место"
+        verbose_name_plural = "Рабочие места"
+        unique_together = ('department', 'name')
+
+
+@receiver(m2m_changed, sender=Workplace.dangerous_works.through)
+def cart_update_total_when_item_added(sender, instance, action, *args, **kwargs):
+    if action == 'post_add' or action == 'post_remove':
+        instance.check_knowledge_test()
+        instance.save()
+
+
+class WorkplaceFactor(models.Model):
+    workplace = models.ForeignKey('Workplace', on_delete=models.CASCADE)
+    factor = models.ForeignKey('Factor', on_delete=models.CASCADE, verbose_name="Фактор", )
+    condition_class = models.CharField(max_length=3, verbose_name="Класс условий труда",
+                                       choices=ConditionClassChoices.choices)
+
+    class Meta:
+        ordering = ['factor__name', ]
+        unique_together = ('workplace_id', 'factor_id')

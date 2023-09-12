@@ -2,13 +2,13 @@
 {% load django_bootstrap5 %}
 
 {% block content %}
-    <h2>Cтруктуртные подразделения организации {{ company.name }}</h2>
+    <h2>{{ department }}</h2>
         <form method="post" class="form">
-            {{ form }}
-        {% csrf_token %}
-            {% for formset in inlines %}
-                {% bootstrap_formset formset layout='horizontal' %}
-            {% endfor %}
+            {% csrf_token %}
+            {% bootstrap_form form layout='horizontal' %}
+            <hr>
+            <h2>Вредные и опасные факторы</h2>
+            {% bootstrap_formset inlines.0 layout='horizontal' %}
         {% bootstrap_button button_type="submit" content="Сохранить" %}
         <a class="btn btn-primary" href="{{ cancel_url }}" role="button">Отмена</a>
         </form>

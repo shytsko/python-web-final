@@ -2,7 +2,7 @@
 {% load django_bootstrap5 %}
 
 {% block content %}
-<h2>Организация</h2>
+<h2>Новое рабочее место в структорном подразделении {{ department }}</h2>
 <form method="post" class="form">
     {% csrf_token %}
     {% bootstrap_form form layout='horizontal' %}

@@ -2,8 +2,6 @@
 {% load django_bootstrap5 %}
 
 {% block content %}
-
-{% if company %}
 <h2>Общие сведения об организации</h2>
 <table class="table">
     <tbody>
@@ -78,8 +76,5 @@
     {% endfor %}
 </div>
 <a class="btn btn-primary mt-3" href="{% url 'factor_create' %}" role="button">Создать</a>
-{% else %}
-{% bootstrap_alert "Текущий пользователь не связан с организацией!!!" alert_type="warning" %}
-{% endif %}
 
 {% endblock %}

@@ -1,10 +1,25 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import AccessMixin
 from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, UpdateView, CreateView, DeleteView
-from extra_views import InlineFormSetFactory, UpdateWithInlinesView, InlineFormSetView
-from .models import Company, Department, DangerousWork, MedicWork, Factor, FactorCondition
-from .forms import CompanyHiddenForm, FactorCreateForm, FactorConditionInlineForm
+from extra_views import InlineFormSetFactory, UpdateWithInlinesView
+from .models import Company, Department, DangerousWork, MedicWork, Factor, FactorCondition, Workplace, WorkplaceFactor
+from .forms import CompanyHiddenForm, FactorCreateForm, FactorConditionInlineForm, WorkplaceFactorInlineForm, \
+    WorkplaceUpdateForm
+
+
+class LoginRequiredMixinEx(AccessMixin):
+    """К действиям стандартного миксина добавлена проверка связи пользователя с организацией"""
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            self.permission_denied_message = "Требуется вход"
+            return self.handle_no_permission()
+        if request.user.company is None:
+            self.permission_denied_message = "Текущий пользователь не связан с организацией"
+            return self.handle_no_permission()
+        return super().dispatch(request, *args, **kwargs)
 
 
 class CompanyOwnerTestMixin:
@@ -28,17 +43,24 @@ class ContextExMixin:
     company - организация текущего пользователя
     """
     title = ''
-    cancel_url = reverse_lazy('company')
+    cancel_url = None
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['company'] = self.request.user.company
         context['title'] = context['company'].name + self.title
-        context['cancel_url'] = self.cancel_url
+        context['cancel_url'] = self.get_cancel_url()
         return context
 
+    def get_cancel_url(self):
+        if self.cancel_url:
+            return self.cancel_url
+        if self.object:
+            return self.object.get_absolute_url()
+        return reverse_lazy('company')
 
-class CompanyDetailView(LoginRequiredMixin, ContextExMixin, DetailView):
+
+class CompanyDetailView(LoginRequiredMixinEx, ContextExMixin, DetailView):
     context_object_name = 'company'
     template_name = 'company/company_detail.html'
 
@@ -55,11 +77,10 @@ class CompanyDetailView(LoginRequiredMixin, ContextExMixin, DetailView):
         return context
 
 
-class CompanyUpdateView(LoginRequiredMixin, ContextExMixin, UpdateView):
+class CompanyUpdateView(LoginRequiredMixinEx, ContextExMixin, UpdateView):
     context_object_name = 'company'
     fields = '__all__'
     template_name = 'company/company_update.html'
-    success_url = reverse_lazy('company')
 
     def get_object(self, queryset=None):
         return self.request.user.company
@@ -72,7 +93,6 @@ class CompanyInlinesSetUpdateBaseView(UpdateWithInlinesView):
     model = Company
     form_class = CompanyHiddenForm
     context_object_name = 'company'
-    success_url = reverse_lazy('company')
 
     def get_object(self, queryset=None):
         return self.request.user.company
@@ -93,43 +113,48 @@ class MedicWorksInline(InlineFormSetFactory):
     fields = '__all__'
 
 
-class CompanyDepartmentsSetUpdateView(LoginRequiredMixin, ContextExMixin, CompanyInlinesSetUpdateBaseView):
+class CompanyDepartmentsSetUpdateView(LoginRequiredMixinEx, ContextExMixin, CompanyInlinesSetUpdateBaseView):
     inlines = (DepartmentInline,)
     template_name = 'company/departments_update.html'
 
 
-class CompanyDangerousWorksSetUpdateView(LoginRequiredMixin, ContextExMixin, CompanyInlinesSetUpdateBaseView):
+class CompanyDangerousWorksSetUpdateView(LoginRequiredMixinEx, ContextExMixin, CompanyInlinesSetUpdateBaseView):
     inlines = (DangerousWorksInline,)
     template_name = 'company/dangerous_works_update.html'
 
 
-class CompanyMedicWorksSetUpdateView(LoginRequiredMixin, ContextExMixin, CompanyInlinesSetUpdateBaseView):
+class CompanyMedicWorksSetUpdateView(LoginRequiredMixinEx, ContextExMixin, CompanyInlinesSetUpdateBaseView):
     inlines = (MedicWorksInline,)
     template_name = 'company/medic_works_update.html'
 
 
-class DepartmentDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DetailView):
+class DepartmentDetailView(LoginRequiredMixinEx, CompanyOwnerTestMixin, ContextExMixin, DetailView):
     model = Department
     context_object_name = 'department'
     template_name = 'company/department_detail.html'
     pk_url_kwarg = 'department_id'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['workplaces'] = self.object.workplaces.all()
+        return context
 
-class DangerousWorkDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DetailView):
+
+class DangerousWorkDetailView(LoginRequiredMixinEx, CompanyOwnerTestMixin, ContextExMixin, DetailView):
     model = DangerousWork
     context_object_name = 'work'
     template_name = 'company/dangerous_work_detail.html'
     pk_url_kwarg = 'dangerous_work_id'
 
 
-class MedicWorkDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DetailView):
+class MedicWorkDetailView(LoginRequiredMixinEx, CompanyOwnerTestMixin, ContextExMixin, DetailView):
     model = MedicWork
     context_object_name = 'work'
     template_name = 'company/medic_work_detail.html'
     pk_url_kwarg = 'medic_work_id'
 
 
-class FactorDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DetailView):
+class FactorDetailView(LoginRequiredMixinEx, CompanyOwnerTestMixin, ContextExMixin, DetailView):
     model = Factor
     context_object_name = 'factor'
     template_name = 'company/factor_detail.html'
@@ -141,7 +166,7 @@ class FactorDetailView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin
         return context
 
 
-class FactorCreateView(LoginRequiredMixin, ContextExMixin, CreateView):
+class FactorCreateView(LoginRequiredMixinEx, ContextExMixin, CreateView):
     form_class = FactorCreateForm
     template_name = 'company/factor_create.html'
 
@@ -167,18 +192,97 @@ class FactorConditionInline(InlineFormSetFactory):
     }
 
 
-class FactorUpdateView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, UpdateWithInlinesView):
+class FactorUpdateView(LoginRequiredMixinEx, CompanyOwnerTestMixin, ContextExMixin, UpdateWithInlinesView):
     model = Factor
     context_object_name = 'factor'
     pk_url_kwarg = 'factor_id'
     inlines = (FactorConditionInline,)
     fields = '__all__'
-    success_url = reverse_lazy('company')
     template_name = 'company/factor_update.html'
 
 
-class FactorDeleteView(LoginRequiredMixin, CompanyOwnerTestMixin, ContextExMixin, DeleteView):
+class FactorDeleteView(LoginRequiredMixinEx, CompanyOwnerTestMixin, ContextExMixin, DeleteView):
     model = Factor
     success_url = reverse_lazy('company')
-    template_name = 'company/factor_delete_confirm.html'
+    template_name = 'company/delete_confirm.html'
     pk_url_kwarg = 'factor_id'
+
+
+class WorkplaceDetailView(LoginRequiredMixinEx, CompanyOwnerTestMixin, ContextExMixin, DetailView):
+    model = Workplace
+    context_object_name = 'workplace'
+    template_name = 'company/workplace_detail.html'
+    pk_url_kwarg = 'workplace_id'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['factors'] = self.object.workplacefactor_set.all()
+        context['dangerous_works'] = self.object.dangerous_works.all()
+        context['medic_works'] = self.object.medic_works.all()
+        return context
+
+
+class WorkplaceCreateView(LoginRequiredMixinEx, ContextExMixin, CreateView):
+    model = Workplace
+    fields = ('name', 'extra_description', 'code')
+    template_name = 'company/workplace_create.html'
+
+    def get_success_url(self):
+        return reverse_lazy('workplace_update', kwargs={'workplace_id': self.object.pk})
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        setattr(self, 'department', get_object_or_404(Department, pk=self.kwargs["department_id"]))
+
+    def get_cancel_url(self):
+        return reverse_lazy('department_detail', kwargs={'department_id': self.kwargs["department_id"]})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['department'] = self.department
+        return context
+
+    def form_valid(self, form):
+        form.instance.department = self.department
+        return super(WorkplaceCreateView, self).form_valid(form)
+
+
+class WorkplaceFactorInline(InlineFormSetFactory):
+    model = WorkplaceFactor
+    fields = '__all__'
+    form_class = WorkplaceFactorInlineForm
+
+
+class WorkplaceUpdateView(LoginRequiredMixinEx, CompanyOwnerTestMixin, ContextExMixin, UpdateWithInlinesView):
+    model = Workplace
+    form_class = WorkplaceUpdateForm
+    context_object_name = 'workplace'
+    pk_url_kwarg = 'workplace_id'
+    inlines = (WorkplaceFactorInline,)
+    inlines_names = ('factors',)
+    template_name = 'company/workplace_update.html'
+
+    def get_form_class(self):
+        form_class = super().get_form_class()
+        form_class.company_id = self.request.user.company_id
+        return form_class
+
+    def construct_inlines(self):
+        inline_formsets = []
+        for inline_class in self.get_inlines():
+            inline_instance = inline_class(
+                self.model, self.request, self.object, self.kwargs, self
+            )
+            inline_instance.form_class.company_id = self.request.user.company_id
+            inline_formset = inline_instance.construct_formset()
+            inline_formsets.append(inline_formset)
+        return inline_formsets
+
+
+class WorkplaceDeleteView(LoginRequiredMixinEx, CompanyOwnerTestMixin, ContextExMixin, DeleteView):
+    model = Workplace
+    template_name = 'company/delete_confirm.html'
+    pk_url_kwarg = 'workplace_id'
+
+    def get_success_url(self):
+        return self.object.department.get_absolute_url()
