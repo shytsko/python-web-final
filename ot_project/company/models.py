@@ -206,7 +206,7 @@ class FactorCondition(models.Model):
 class Workplace(models.Model):
     department = models.ForeignKey("Department", related_name="workplaces", on_delete=models.PROTECT, editable=False)
     name = models.CharField(verbose_name="Название", max_length=100)
-    extra_description = models.CharField(verbose_name="Дополнительное описание", max_length=100, null=True, blank=True)
+    extra_description = models.CharField(verbose_name="Дополнительное описание", max_length=250, null=True, blank=True)
     code = models.CharField(verbose_name="Код должности/профессии", max_length=8,
                             validators=[RegexValidator(regex=r'^\d{4}-\d{3}$',
                                                        message="Код должен соответствовать шаблону XXXX-XXX (X - число)")
@@ -248,7 +248,7 @@ class Workplace(models.Model):
                 self.knowledge_test_period = None
 
     def __str__(self):
-        return f"{self.department.name} - {self.name}"
+        return self.name
 
     class Meta:
         ordering = ['department', 'name']
