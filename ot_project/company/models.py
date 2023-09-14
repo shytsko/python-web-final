@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
@@ -220,6 +220,21 @@ class Workplace(models.Model):
     is_need_knowledge_test = models.BooleanField(default=False, verbose_name="Требуется проверка знаний")
     knowledge_test_period = models.SmallIntegerField(verbose_name="Периодичность проверки знаний в месяцах",
                                                      blank=True, null=True)
+
+    @property
+    def is_need_prev_medical_check(self):
+        if self.medic_works.count() > 0:
+            return True
+        for factor in self.factors:
+            pass
+
+    # from company.models import WorkplaceFactor, Workplace
+    # from django.db.models import F
+    # wp = Workplace.objects.get(pk=4)
+    # q =  wp.workplacefactor_set.filter(factor__conditions__condition_class=F("condition_class")).values("factor__pk", "factor__conditions__condition_class", "factor__conditions__is_need_prev_medical").all()
+    # q = wp.workplacefactor_set.filter(factor__conditions__condition_class=F("condition_class")).values_list("factor__conditions__is_need_prev_medical", flat=True).all()
+    # q =  wp.workplacefactor_set.filter(factor__conditions__condition_class=F("condition_class")).values_list("factor__conditions__medical_period", flat = True).all()
+
 
     def get_absolute_url(self):
         return reverse_lazy('workplace_detail', kwargs={'workplace_id': self.pk})
