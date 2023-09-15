@@ -56,6 +56,20 @@
     Не требуется
     {% endif %}
 </p>
+<p>Предварительный медостмортр:
+    {% if workplace.is_need_prev_medical_check %}
+    Требуется
+    {% else %}
+    Не требуется
+    {% endif %}
+</p>
+<p>Периодический медосмотр:
+    {% if workplace.get_period_medical_check %}
+    {{ workplace.get_period_medical_check.label }}
+    {% else %}
+    Не требуется
+    {% endif %}
+</p>
 <hr>
 <a class="btn btn-primary mt-3" href="{% url 'workplace_update' workplace.pk %}" role="button">Редактировать</a>
 <a class="btn btn-danger mt-3" href="{% url 'workplace_delete' workplace.pk %}" role="button">Удалить</a>
