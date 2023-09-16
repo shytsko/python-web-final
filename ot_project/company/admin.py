@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Company, Department, DangerousWork, MedicWork, Factor, FactorCondition, WorkplaceFactor, Workplace
+from .models import Company, Department, DangerousWork, MedicWork, Factor, FactorCondition
 
 
 class DepartmentInline(admin.TabularInline):
@@ -65,15 +65,3 @@ class FactorAdmin(admin.ModelAdmin):
     ordering = ('company', 'name',)
     list_filter = ('company',)
     inlines = (FactorConditionInline,)
-
-
-class WorkplaceFactorInline(admin.TabularInline):
-    model = WorkplaceFactor
-    fields = ('factor', 'condition_class')
-
-
-@admin.register(Workplace)
-class WorkplaceAdmin(admin.ModelAdmin):
-    list_display = ('name', 'department',)
-    ordering = ('department', 'name',)
-    inlines = (WorkplaceFactorInline,)
