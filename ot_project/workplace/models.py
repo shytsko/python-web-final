@@ -76,7 +76,7 @@ class Workplace(models.Model):
 
 
 @receiver(m2m_changed, sender=Workplace.dangerous_works.through)
-def cart_update_total_when_item_added(sender, instance, action, *args, **kwargs):
+def dangerous_works_update(sender, instance, action, *args, **kwargs):
     if action == 'post_add' or action == 'post_remove':
         instance.check_knowledge_test()
         instance.save()
