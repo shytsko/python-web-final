@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+
+<h2>Сотрудник</h2>
+<hr>
+<h3>{{ employee }}</h3>
+<hr>
+
+<a class="btn btn-primary mt-3" href="{% url 'employee_update' employee.pk %}" role="button">Редактировать</a>
+<a class="btn btn-danger mt-3" href="{% url 'employee_delete' employee.pk %}" role="button">Удалить</a>
+
+{% endblock %}

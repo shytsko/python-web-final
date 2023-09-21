@@ -23,11 +23,22 @@ class Employee(models.Model):
         verbose_name = "Сотрудник"
         verbose_name_plural = "Сотрудники"
 
-    # def get_absolute_url(self):
-    #     return reverse_lazy("employee_detail", kwargs={"employee_id": self.pk})
+    def get_absolute_url(self):
+        return reverse_lazy("employee_detail", kwargs={"employee_id": self.pk})
 
     def get_owner_company_id(self):
         return self.company_id
+
+    @property
+    def full_name(self):
+        return f"{self.last_name} {self.first_name}" + f" {self.middle_name}" if self.middle_name else ""
+
+    @property
+    def short_name(self):
+        return f"{self.last_name} {self.first_name[0]}." + f" {self.middle_name[0]}." if self.middle_name else ""
+
+    def __str__(self):
+        return self.full_name
 
 
 class EmployeeWorkplace(models.Model):
